@@ -1,6 +1,6 @@
 
 import ToolCard from "@/components/ToolCard";
-import { FileText, Image, FilePdf } from "lucide-react";
+import { FileText, Image, File } from "lucide-react";
 
 const tools = [
   {
@@ -16,7 +16,7 @@ const tools = [
     href: "/image-compressor",
   },
   {
-    icon: FilePdf,
+    icon: File,
     title: "PDF Tools",
     description: "Convert, merge, and edit PDF files with ease.",
     href: "/pdf-tools",
