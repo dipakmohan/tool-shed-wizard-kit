@@ -10,10 +10,12 @@ const Header = () => {
           <FileUp className="h-6 w-6" />
           <span>Toolkit</span>
         </Link>
-        <nav className="hidden md:flex gap-4">
+        <nav className="hidden md:flex flex-wrap gap-4">
           <Link to="/image-to-text" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Image to Text</Link>
           <Link to="/image-compressor" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Image Compressor</Link>
           <Link to="/pdf-tools" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">PDF Tools</Link>
+          <Link to="/unit-converter" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Unit Converter</Link>
+          <Link to="/loan-calculator" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Loan Calculator</Link>
         </nav>
       </div>
     </header>

@@ -1,6 +1,6 @@
 
 import ToolCard from "@/components/ToolCard";
-import { FileText, Image, File } from "lucide-react";
+import { FileText, Image, File, Calculator, Currency } from "lucide-react";
 
 const tools = [
   {
@@ -8,18 +8,35 @@ const tools = [
     title: "Image to Text",
     description: "Extract text from JPG, PNG, and other image formats.",
     href: "/image-to-text",
+    color: "primary" as const,
   },
   {
     icon: Image,
     title: "Image Compressor",
     description: "Reduce the file size of your images without losing quality.",
     href: "/image-compressor",
+    color: "green" as const,
   },
   {
     icon: File,
     title: "PDF Tools",
     description: "Convert, merge, and edit PDF files with ease.",
     href: "/pdf-tools",
+    color: "yellow" as const,
+  },
+  {
+    icon: Calculator,
+    title: "Unit Converter",
+    description: "Quickly convert between different units of measurement.",
+    href: "/unit-converter",
+    color: "purple" as const,
+  },
+  {
+    icon: Currency,
+    title: "Loan Calculator",
+    description: "Estimate your monthly loan payments.",
+    href: "/loan-calculator",
+    color: "accent" as const,
   },
 ];
 

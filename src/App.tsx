@@ -11,6 +11,8 @@ import ImageCompressor from "./pages/ImageCompressor";
 import PdfTools from "./pages/PdfTools";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import UnitConverter from "./pages/UnitConverter";
+import LoanCalculator from "./pages/LoanCalculator";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,8 @@ const App = () => (
               <Route path="/image-to-text" element={<ImageToText />} />
               <Route path="/image-compressor" element={<ImageCompressor />} />
               <Route path="/pdf-tools" element={<PdfTools />} />
+              <Route path="/unit-converter" element={<UnitConverter />} />
+              <Route path="/loan-calculator" element={<LoanCalculator />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
