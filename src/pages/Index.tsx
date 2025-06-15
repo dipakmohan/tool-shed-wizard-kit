@@ -1,4 +1,3 @@
-
 import ToolCard from "@/components/ToolCard";
 import { FileText, Image, File, Calculator, Currency } from "lucide-react";
 
@@ -20,7 +19,7 @@ const tools = [
   {
     icon: File,
     title: "PDF Tools",
-    description: "Convert, merge, and edit PDF files with ease.",
+    description: "Extract pages from a PDF as images.",
     href: "/pdf-tools",
     color: "yellow" as const,
   },

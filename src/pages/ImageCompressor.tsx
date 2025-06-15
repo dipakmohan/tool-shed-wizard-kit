@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import imageCompression from 'browser-image-compression';
 import { useToast } from "@/hooks/use-toast";
@@ -65,10 +64,9 @@ const ImageCompressor = () => {
     setCompressedUrl(null);
 
     const options = {
-      maxSizeMB: 2, // This can be adjusted
       maxWidthOrHeight: 1920,
       useWebWorker: true,
-      quality: quality / 100,
+      initialQuality: quality / 100, // Corrected option from 'quality' to 'initialQuality'
     };
 
     try {
