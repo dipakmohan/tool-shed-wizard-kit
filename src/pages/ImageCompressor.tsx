@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import imageCompression from 'browser-image-compression';
 import { useToast } from "@/hooks/use-toast";
@@ -66,17 +67,25 @@ const ImageCompressor = () => {
     const options = {
       maxWidthOrHeight: 1920,
       useWebWorker: true,
-      initialQuality: quality / 100, // Corrected option from 'quality' to 'initialQuality'
+      initialQuality: quality / 100,
     };
 
     try {
       const compressed = await imageCompression(originalFile, options);
       setCompressedFile(compressed);
       setCompressedUrl(URL.createObjectURL(compressed));
-      toast({
-        title: "Success!",
-        description: `Image compressed by ${Math.round(100 - (compressed.size / originalFile.size) * 100)}%.`,
-      });
+      
+      if (compressed.size >= originalFile.size) {
+        toast({
+          title: "Image Processed",
+          description: "Could not reduce file size further. The image may already be optimized.",
+        });
+      } else {
+        toast({
+          title: "Success!",
+          description: `Image compressed by ${Math.round(100 - (compressed.size / originalFile.size) * 100)}%.`,
+        });
+      }
     } catch (error) {
       console.error(error);
       toast({
@@ -160,9 +169,15 @@ const ImageCompressor = () => {
           </CardContent>
           {compressedFile && (
             <CardFooter className="flex-col gap-4">
-               <p className="text-sm text-center text-green-600 dark:text-green-500 font-medium">
-                  New size: {formatBytes(compressedFile.size)} ({Math.round(100 - (compressedFile.size / (originalFile?.size || 1)) * 100)}% smaller)
-                </p>
+               {originalFile && compressedFile.size < originalFile.size ? (
+                 <p className="text-sm text-center text-green-600 dark:text-green-500 font-medium">
+                    New size: {formatBytes(compressedFile.size)} ({Math.round(100 - (compressedFile.size / originalFile.size) * 100)}% smaller)
+                  </p>
+               ) : (
+                 <p className="text-sm text-center text-muted-foreground">
+                    New size: {formatBytes(compressedFile.size)}. Could not reduce file size.
+                 </p>
+               )}
               <Button onClick={handleDownload} className="w-full">
                 <Download />
                 Download Compressed Image
