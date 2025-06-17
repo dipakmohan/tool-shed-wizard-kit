@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +22,17 @@ const InvestmentCalculator = () => {
   const [interestRate, setInterestRate] = useState<string>('');
   const [termYears, setTermYears] = useState<string>('');
   const [result, setResult] = useState<CalculationResult | null>(null);
+
+  // Set default values when investment type changes
+  useEffect(() => {
+    if (investmentType === 'nsc') {
+      setTermYears('5');
+      setInterestRate('6.8');
+    } else {
+      setTermYears('');
+      setInterestRate('');
+    }
+  }, [investmentType]);
 
   const calculateFD = (p: number, r: number, t: number, compoundingFreq: number = 4): CalculationResult => {
     const maturityAmount = p * Math.pow(1 + r / (100 * compoundingFreq), compoundingFreq * t);
@@ -125,6 +135,14 @@ const InvestmentCalculator = () => {
     }).format(amount);
   };
 
+  const handleInvestmentTypeChange = (value: InvestmentType) => {
+    setInvestmentType(value);
+    // Clear previous results when changing investment type
+    setResult(null);
+    setPrincipal('');
+    setMonthlyAmount('');
+  };
+
   return (
     <div className="animate-fade-in space-y-8">
       <div className="text-center">
@@ -144,7 +162,7 @@ const InvestmentCalculator = () => {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label>Investment Type</Label>
-              <Select value={investmentType} onValueChange={(value) => setInvestmentType(value as InvestmentType)}>
+              <Select value={investmentType} onValueChange={handleInvestmentTypeChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -245,9 +263,9 @@ const InvestmentCalculator = () => {
                 id="termYears"
                 type="number"
                 placeholder={investmentType === 'nsc' ? '5' : 'Enter number of years'}
-                value={investmentType === 'nsc' ? '5' : termYears}
+                value={termYears}
                 onChange={(e) => setTermYears(e.target.value)}
-                disabled={investmentType === 'nsc'}
+                readOnly={investmentType === 'nsc'}
               />
             </div>
 
