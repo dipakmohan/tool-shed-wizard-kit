@@ -48,40 +48,72 @@ const InvestmentCalculator = () => {
     };
   };
 
-  const calculateNSC = (p: number, t: number): CalculationResult => {
-    const rate = 6.8; // Current NSC rate (as of 2024)
-    const maturityAmount = p * Math.pow(1 + rate / 100, t);
+  const calculateNSC = (p: number, r: number, t: number): CalculationResult => {
+    // NSC compounds annually
+    const maturityAmount = p * Math.pow(1 + r / 100, t);
     return {
       maturityAmount,
       totalInvestment: p,
       totalInterest: maturityAmount - p,
-      interestRate: rate
+      interestRate: r
     };
   };
 
   const handleCalculate = () => {
+    console.log('Calculate button clicked');
+    console.log('Investment type:', investmentType);
+    console.log('Principal:', principal);
+    console.log('Monthly amount:', monthlyAmount);
+    console.log('Interest rate:', interestRate);
+    console.log('Term years:', termYears);
+
     let result: CalculationResult;
     const years = parseFloat(termYears);
+    
+    if (isNaN(years) || years <= 0) {
+      console.error('Invalid years:', years);
+      return;
+    }
 
     switch (investmentType) {
       case 'fd':
         const fdPrincipal = parseFloat(principal);
         const fdRate = parseFloat(interestRate);
+        console.log('FD calculation - Principal:', fdPrincipal, 'Rate:', fdRate, 'Years:', years);
+        
+        if (isNaN(fdPrincipal) || isNaN(fdRate) || fdPrincipal <= 0 || fdRate <= 0) {
+          console.error('Invalid FD inputs');
+          return;
+        }
         result = calculateFD(fdPrincipal, fdRate, years);
         break;
       case 'rd':
         const rdAmount = parseFloat(monthlyAmount);
         const rdRate = parseFloat(interestRate);
+        console.log('RD calculation - Monthly:', rdAmount, 'Rate:', rdRate, 'Years:', years);
+        
+        if (isNaN(rdAmount) || isNaN(rdRate) || rdAmount <= 0 || rdRate <= 0) {
+          console.error('Invalid RD inputs');
+          return;
+        }
         result = calculateRD(rdAmount, rdRate, years);
         break;
       case 'nsc':
         const nscPrincipal = parseFloat(principal);
-        result = calculateNSC(nscPrincipal, years);
+        const nscRate = parseFloat(interestRate);
+        console.log('NSC calculation - Principal:', nscPrincipal, 'Rate:', nscRate, 'Years:', years);
+        
+        if (isNaN(nscPrincipal) || isNaN(nscRate) || nscPrincipal <= 0 || nscRate <= 0) {
+          console.error('Invalid NSC inputs');
+          return;
+        }
+        result = calculateNSC(nscPrincipal, nscRate, years);
         break;
       default:
         return;
     }
 
+    console.log('Calculation result:', result);
     setResult(result);
   };
 
@@ -177,19 +209,32 @@ const InvestmentCalculator = () => {
             )}
 
             {investmentType === 'nsc' && (
-              <div className="space-y-2">
-                <Label htmlFor="principal">Investment Amount (₹)</Label>
-                <Input
-                  id="principal"
-                  type="number"
-                  placeholder="Enter investment amount"
-                  value={principal}
-                  onChange={(e) => setPrincipal(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  NSC has a fixed tenure of 5 years and current interest rate of 6.8% p.a.
-                </p>
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="principal">Investment Amount (₹)</Label>
+                  <Input
+                    id="principal"
+                    type="number"
+                    placeholder="Enter investment amount"
+                    value={principal}
+                    onChange={(e) => setPrincipal(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="interestRate">Interest Rate (% per annum)</Label>
+                  <Input
+                    id="interestRate"
+                    type="number"
+                    step="0.1"
+                    placeholder="Enter current NSC interest rate"
+                    value={interestRate}
+                    onChange={(e) => setInterestRate(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Current NSC rate is around 6.8% p.a. (rates change quarterly)
+                  </p>
+                </div>
+              </>
             )}
 
             <div className="space-y-2">
@@ -248,7 +293,7 @@ const InvestmentCalculator = () => {
                 <p>* Calculations are approximate and may vary based on bank policies.</p>
                 <p>* For FD: Quarterly compounding assumed.</p>
                 <p>* For RD: Monthly compounding assumed.</p>
-                <p>* NSC interest rate is subject to government revisions.</p>
+                <p>* NSC: Annual compounding with current selectable interest rate.</p>
               </div>
             </CardContent>
           </Card>
