@@ -1,8 +1,15 @@
 
 import ToolCard from "@/components/ToolCard";
-import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt } from "lucide-react";
+import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan } from "lucide-react";
 
 const tools = [
+  {
+    icon: Scan,
+    title: "Camera Scanner",
+    description: "AI-powered scanner for math, biology, landmarks, and more using your camera.",
+    href: "/camera-scanner",
+    color: "gradient" as const,
+  },
   {
     icon: FileText,
     title: "Image to Text",
@@ -64,9 +71,11 @@ const tools = [
 const Index = () => {
   return (
     <div className="text-center">
-      <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 animate-fade-in">Your All-in-One Digital Toolkit</h1>
+      <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 animate-fade-in bg-gradient-to-r from-blue-600 via-green-500 to-purple-600 bg-clip-text text-transparent">
+        Your All-in-One Digital Toolkit
+      </h1>
       <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto animate-fade-in" style={{animationDelay: '0.1s'}}>
-        Quickly and easily convert, compress, and edit your files with our suite of powerful online tools.
+        Quickly and easily convert, compress, and edit your files with our suite of powerful online tools. Now with AI-powered camera scanning!
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {tools.map((tool, index) => (

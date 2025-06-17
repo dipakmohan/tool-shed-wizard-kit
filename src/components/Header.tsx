@@ -11,13 +11,14 @@ import {
 
 const Header = () => {
   return (
-    <header className="py-4 px-4 sm:px-6 lg:px-8 bg-card border-b">
+    <header className="py-4 px-4 sm:px-6 lg:px-8 bg-card border-b border-gradient-to-r from-blue-200 via-green-200 to-purple-200">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="flex items-center gap-2 text-xl font-bold text-primary">
-          <FileUp className="h-6 w-6" />
+        <Link to="/" className="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-blue-600 via-green-500 to-purple-600 bg-clip-text text-transparent">
+          <FileUp className="h-6 w-6 text-primary" />
           <span>Toolkit</span>
         </Link>
         <nav className="hidden md:flex flex-wrap gap-4">
+          <Link to="/camera-scanner" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors font-semibold">Camera Scanner</Link>
           <Link to="/image-to-text" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Image to Text</Link>
           <Link to="/image-compressor" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Image Compressor</Link>
           

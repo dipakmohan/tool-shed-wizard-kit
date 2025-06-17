@@ -16,6 +16,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import UnitConverter from "./pages/UnitConverter";
 import LoanCalculator from "./pages/LoanCalculator";
+import CameraScanner from "./pages/CameraScanner";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/tax-calculator" element={<TaxCalculator />} />
               <Route path="/unit-converter" element={<UnitConverter />} />
               <Route path="/loan-calculator" element={<LoanCalculator />} />
+              <Route path="/camera-scanner" element={<CameraScanner />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
