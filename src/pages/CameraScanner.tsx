@@ -3,7 +3,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Scan, Download, RotateCcw, Zap, BookOpen, Calculator, MapPin, Car, Leaf } from 'lucide-react';
+import { Camera, Scan, Download, RotateCcw, Zap, BookOpen, Calculator, MapPin, Car, Leaf, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface AnalysisResult {
@@ -19,25 +19,69 @@ const CameraScanner = () => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const { toast } = useToast();
 
   const startCamera = useCallback(async () => {
+    console.log('Starting camera...');
+    setIsLoading(true);
+    setCameraError(null);
+    
     try {
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported in this browser');
+      }
+
+      console.log('Requesting camera access...');
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       });
+      
+      console.log('Camera access granted');
       streamRef.current = stream;
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setIsScanning(true);
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded');
+          setIsScanning(true);
+          setIsLoading(false);
+          toast({
+            title: "Camera Ready",
+            description: "Camera is now active. You can capture images.",
+          });
+        };
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Camera error:', error);
+      setIsLoading(false);
+      let errorMessage = 'Unable to access camera. ';
+      
+      if (error.name === 'NotAllowedError') {
+        errorMessage += 'Please allow camera permissions in your browser settings.';
+      } else if (error.name === 'NotFoundError') {
+        errorMessage += 'No camera found on this device.';
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage += 'Camera not supported on this device.';
+      } else if (error.name === 'NotReadableError') {
+        errorMessage += 'Camera is already in use by another application.';
+      } else {
+        errorMessage += error.message || 'Unknown error occurred.';
+      }
+      
+      setCameraError(errorMessage);
       toast({
         title: "Camera Error",
-        description: "Unable to access camera. Please check permissions.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -210,11 +254,30 @@ const CameraScanner = () => {
                   alt="Captured"
                   className="w-full h-full object-cover"
                 />
+              ) : cameraError ? (
+                <div className="w-full h-full flex items-center justify-center p-4">
+                  <div className="text-center space-y-3">
+                    <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+                    <p className="text-red-600 text-sm">{cameraError}</p>
+                    <Button onClick={startCamera} variant="outline" size="sm">
+                      Try Again
+                    </Button>
+                  </div>
+                </div>
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center space-y-2">
-                    <Scan className="h-12 w-12 text-muted-foreground mx-auto" />
-                    <p className="text-muted-foreground">Ready to scan</p>
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+                        <p className="text-muted-foreground">Starting camera...</p>
+                      </>
+                    ) : (
+                      <>
+                        <Scan className="h-12 w-12 text-muted-foreground mx-auto" />
+                        <p className="text-muted-foreground">Ready to scan</p>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -222,7 +285,7 @@ const CameraScanner = () => {
             </div>
 
             <div className="flex gap-2 justify-center">
-              {!isScanning && !capturedImage && (
+              {!isScanning && !capturedImage && !isLoading && (
                 <Button onClick={startCamera} className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600">
                   <Camera className="h-4 w-4 mr-2" />
                   Start Camera
@@ -333,6 +396,26 @@ const CameraScanner = () => {
         </Card>
       </div>
 
+      {/* Troubleshooting info */}
+      {cameraError && (
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+              <div className="space-y-2">
+                <h3 className="font-medium text-red-800">Camera Troubleshooting</h3>
+                <ul className="text-sm text-red-700 space-y-1">
+                  <li>• Make sure to allow camera permissions when prompted</li>
+                  <li>• Close other applications that might be using your camera</li>
+                  <li>• Try refreshing the page and clicking "Start Camera" again</li>
+                  <li>• Ensure your device has a working camera</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Feature highlights */}
       <Card className="bg-gradient-to-r from-blue-50 via-green-50 to-purple-50 border-0">
         <CardContent className="pt-6">
@@ -355,7 +438,7 @@ const CameraScanner = () => {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </div>
     </div>
   );
 };
