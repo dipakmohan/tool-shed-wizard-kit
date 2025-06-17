@@ -9,6 +9,9 @@ import NotFound from "./pages/NotFound";
 import ImageToText from "./pages/ImageToText";
 import ImageCompressor from "./pages/ImageCompressor";
 import PdfTools from "./pages/PdfTools";
+import PdfMerger from "./pages/PdfMerger";
+import InvestmentCalculator from "./pages/InvestmentCalculator";
+import TaxCalculator from "./pages/TaxCalculator";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import UnitConverter from "./pages/UnitConverter";
@@ -30,6 +33,9 @@ const App = () => (
               <Route path="/image-to-text" element={<ImageToText />} />
               <Route path="/image-compressor" element={<ImageCompressor />} />
               <Route path="/pdf-tools" element={<PdfTools />} />
+              <Route path="/pdf-merger" element={<PdfMerger />} />
+              <Route path="/investment-calculator" element={<InvestmentCalculator />} />
+              <Route path="/tax-calculator" element={<TaxCalculator />} />
               <Route path="/unit-converter" element={<UnitConverter />} />
               <Route path="/loan-calculator" element={<LoanCalculator />} />
               <Route path="*" element={<NotFound />} />

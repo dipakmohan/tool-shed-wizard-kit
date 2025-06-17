@@ -1,5 +1,6 @@
+
 import ToolCard from "@/components/ToolCard";
-import { FileText, Image, File, Calculator, Currency } from "lucide-react";
+import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt } from "lucide-react";
 
 const tools = [
   {
@@ -18,9 +19,16 @@ const tools = [
   },
   {
     icon: File,
-    title: "PDF Tools",
+    title: "PDF to Image",
     description: "Extract pages from a PDF as images.",
     href: "/pdf-tools",
+    color: "yellow" as const,
+  },
+  {
+    icon: FilePlus,
+    title: "PDF Merger",
+    description: "Combine multiple PDF files into a single document.",
+    href: "/pdf-merger",
     color: "yellow" as const,
   },
   {
@@ -37,6 +45,20 @@ const tools = [
     href: "/loan-calculator",
     color: "accent" as const,
   },
+  {
+    icon: PiggyBank,
+    title: "Investment Calculator",
+    description: "Calculate FD, RD, and NSC maturity values.",
+    href: "/investment-calculator",
+    color: "green" as const,
+  },
+  {
+    icon: Receipt,
+    title: "Tax Calculator",
+    description: "Calculate income tax under Indian law (New & Old regime).",
+    href: "/tax-calculator",
+    color: "primary" as const,
+  },
 ];
 
 const Index = () => {
@@ -46,7 +68,7 @@ const Index = () => {
       <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto animate-fade-in" style={{animationDelay: '0.1s'}}>
         Quickly and easily convert, compress, and edit your files with our suite of powerful online tools.
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {tools.map((tool, index) => (
           <ToolCard
             key={tool.href}
