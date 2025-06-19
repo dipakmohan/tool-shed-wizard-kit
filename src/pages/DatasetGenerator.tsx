@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
@@ -29,22 +28,64 @@ const DatasetGenerator = () => {
   const { toast } = useToast();
 
   const dataTypeOptions = [
-    { value: 'name', label: 'Full Name' },
-    { value: 'firstName', label: 'First Name' },
-    { value: 'lastName', label: 'Last Name' },
-    { value: 'email', label: 'Email' },
-    { value: 'phone', label: 'Phone Number' },
-    { value: 'address', label: 'Address' },
-    { value: 'city', label: 'City' },
-    { value: 'country', label: 'Country' },
-    { value: 'company', label: 'Company' },
-    { value: 'jobTitle', label: 'Job Title' },
-    { value: 'age', label: 'Age' },
-    { value: 'salary', label: 'Salary' },
-    { value: 'date', label: 'Date' },
-    { value: 'boolean', label: 'Boolean' },
-    { value: 'number', label: 'Random Number' },
-    { value: 'text', label: 'Lorem Text' }
+    // Personal Data
+    { value: 'name', label: 'Full Name', category: 'Personal' },
+    { value: 'firstName', label: 'First Name', category: 'Personal' },
+    { value: 'lastName', label: 'Last Name', category: 'Personal' },
+    { value: 'email', label: 'Email', category: 'Personal' },
+    { value: 'phone', label: 'Phone Number', category: 'Personal' },
+    { value: 'address', label: 'Address', category: 'Personal' },
+    { value: 'city', label: 'City', category: 'Personal' },
+    { value: 'age', label: 'Age', category: 'Personal' },
+    
+    // Commercial Data
+    { value: 'productName', label: 'Product Name', category: 'Commercial' },
+    { value: 'productPrice', label: 'Product Price', category: 'Commercial' },
+    { value: 'productCategory', label: 'Product Category', category: 'Commercial' },
+    { value: 'brandName', label: 'Brand Name', category: 'Commercial' },
+    { value: 'sku', label: 'SKU Code', category: 'Commercial' },
+    { value: 'discount', label: 'Discount %', category: 'Commercial' },
+    
+    // Sales Data
+    { value: 'salesAmount', label: 'Sales Amount', category: 'Sales' },
+    { value: 'salesRep', label: 'Sales Representative', category: 'Sales' },
+    { value: 'customerType', label: 'Customer Type', category: 'Sales' },
+    { value: 'region', label: 'Sales Region', category: 'Sales' },
+    { value: 'quarterlyTarget', label: 'Quarterly Target', category: 'Sales' },
+    { value: 'leadSource', label: 'Lead Source', category: 'Sales' },
+    
+    // Manufacturing Data
+    { value: 'batchNumber', label: 'Batch Number', category: 'Manufacturing' },
+    { value: 'productionQuantity', label: 'Production Quantity', category: 'Manufacturing' },
+    { value: 'qualityScore', label: 'Quality Score', category: 'Manufacturing' },
+    { value: 'machineName', label: 'Machine Name', category: 'Manufacturing' },
+    { value: 'shiftTime', label: 'Shift Time', category: 'Manufacturing' },
+    { value: 'defectRate', label: 'Defect Rate %', category: 'Manufacturing' },
+    
+    // Weather Data
+    { value: 'temperature', label: 'Temperature (°C)', category: 'Weather' },
+    { value: 'humidity', label: 'Humidity %', category: 'Weather' },
+    { value: 'windSpeed', label: 'Wind Speed (km/h)', category: 'Weather' },
+    { value: 'precipitation', label: 'Precipitation (mm)', category: 'Weather' },
+    { value: 'weatherCondition', label: 'Weather Condition', category: 'Weather' },
+    { value: 'uvIndex', label: 'UV Index', category: 'Weather' },
+    
+    // Population Data
+    { value: 'populationSize', label: 'Population Size', category: 'Population' },
+    { value: 'ageGroup', label: 'Age Group', category: 'Population' },
+    { value: 'educationLevel', label: 'Education Level', category: 'Population' },
+    { value: 'incomeLevel', label: 'Income Level', category: 'Population' },
+    { value: 'employmentStatus', label: 'Employment Status', category: 'Population' },
+    { value: 'housingType', label: 'Housing Type', category: 'Population' },
+    
+    // General Data
+    { value: 'company', label: 'Company', category: 'General' },
+    { value: 'jobTitle', label: 'Job Title', category: 'General' },
+    { value: 'salary', label: 'Salary', category: 'General' },
+    { value: 'date', label: 'Date', category: 'General' },
+    { value: 'boolean', label: 'Boolean', category: 'General' },
+    { value: 'number', label: 'Random Number', category: 'General' },
+    { value: 'text', label: 'Lorem Text', category: 'General' }
   ];
 
   const countries = [
@@ -70,6 +111,11 @@ const DatasetGenerator = () => {
     };
     const companies = ['TechCorp', 'InnovateLabs', 'GlobalSoft', 'DataFlow', 'CloudTech', 'SmartSolutions'];
     const jobTitles = ['Software Engineer', 'Data Analyst', 'Product Manager', 'Designer', 'Marketing Specialist'];
+    const products = ['Smartphone', 'Laptop', 'Tablet', 'Headphones', 'Camera', 'Watch'];
+    const categories = ['Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books', 'Automotive'];
+    const brands = ['Apple', 'Samsung', 'Sony', 'Nike', 'Adidas', 'Microsoft'];
+    const machines = ['CNC-001', 'Assembly-Line-A', 'Quality-Check-B', 'Packaging-Unit-C'];
+    const weatherConditions = ['Sunny', 'Cloudy', 'Rainy', 'Snowy', 'Foggy', 'Windy'];
 
     switch (type) {
       case 'name':
@@ -88,14 +134,72 @@ const DatasetGenerator = () => {
         return `${Math.floor(Math.random() * 9999 + 1)} ${['Main St', 'Oak Ave', 'Park Rd', 'First St', 'Second Ave'][Math.floor(Math.random() * 5)]}`;
       case 'city':
         return cities[country as keyof typeof cities]?.[Math.floor(Math.random() * cities[country as keyof typeof cities].length)] || cities.US[Math.floor(Math.random() * cities.US.length)];
-      case 'country':
-        return countries.find(c => c.value === country)?.label || 'United States';
+      case 'age':
+        return Math.floor(Math.random() * 50 + 18);
+      case 'productName':
+        return products[Math.floor(Math.random() * products.length)];
+      case 'productPrice':
+        return (Math.random() * 1000 + 10).toFixed(2);
+      case 'productCategory':
+        return categories[Math.floor(Math.random() * categories.length)];
+      case 'brandName':
+        return brands[Math.floor(Math.random() * brands.length)];
+      case 'sku':
+        return `SKU-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      case 'discount':
+        return Math.floor(Math.random() * 50);
+      case 'salesAmount':
+        return Math.floor(Math.random() * 50000 + 1000);
+      case 'salesRep':
+        return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+      case 'customerType':
+        return ['Individual', 'Business', 'Enterprise'][Math.floor(Math.random() * 3)];
+      case 'region':
+        return ['North', 'South', 'East', 'West', 'Central'][Math.floor(Math.random() * 5)];
+      case 'quarterlyTarget':
+        return Math.floor(Math.random() * 200000 + 50000);
+      case 'leadSource':
+        return ['Website', 'Referral', 'Social Media', 'Email', 'Advertisement'][Math.floor(Math.random() * 5)];
+      case 'batchNumber':
+        return `BATCH-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+      case 'productionQuantity':
+        return Math.floor(Math.random() * 1000 + 100);
+      case 'qualityScore':
+        return (Math.random() * 40 + 60).toFixed(1);
+      case 'machineName':
+        return machines[Math.floor(Math.random() * machines.length)];
+      case 'shiftTime':
+        return ['Day Shift', 'Night Shift', 'Evening Shift'][Math.floor(Math.random() * 3)];
+      case 'defectRate':
+        return (Math.random() * 5).toFixed(2);
+      case 'temperature':
+        return Math.floor(Math.random() * 40 - 10);
+      case 'humidity':
+        return Math.floor(Math.random() * 100);
+      case 'windSpeed':
+        return Math.floor(Math.random() * 50);
+      case 'precipitation':
+        return (Math.random() * 20).toFixed(1);
+      case 'weatherCondition':
+        return weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
+      case 'uvIndex':
+        return Math.floor(Math.random() * 11);
+      case 'populationSize':
+        return Math.floor(Math.random() * 1000000 + 10000);
+      case 'ageGroup':
+        return ['0-18', '19-35', '36-50', '51-65', '65+'][Math.floor(Math.random() * 5)];
+      case 'educationLevel':
+        return ['High School', 'Bachelor\'s', 'Master\'s', 'PhD', 'Other'][Math.floor(Math.random() * 5)];
+      case 'incomeLevel':
+        return ['Low', 'Medium', 'High', 'Very High'][Math.floor(Math.random() * 4)];
+      case 'employmentStatus':
+        return ['Employed', 'Unemployed', 'Student', 'Retired'][Math.floor(Math.random() * 4)];
+      case 'housingType':
+        return ['Apartment', 'House', 'Condo', 'Other'][Math.floor(Math.random() * 4)];
       case 'company':
         return companies[Math.floor(Math.random() * companies.length)];
       case 'jobTitle':
         return jobTitles[Math.floor(Math.random() * jobTitles.length)];
-      case 'age':
-        return Math.floor(Math.random() * 50 + 18);
       case 'salary':
         return Math.floor(Math.random() * 100000 + 30000);
       case 'date':
@@ -188,6 +292,14 @@ const DatasetGenerator = () => {
     URL.revokeObjectURL(url);
   };
 
+  const groupedOptions = dataTypeOptions.reduce((acc, option) => {
+    if (!acc[option.category]) {
+      acc[option.category] = [];
+    }
+    acc[option.category].push(option);
+    return acc;
+  }, {} as Record<string, typeof dataTypeOptions>);
+
   return (
     <div className="animate-fade-in space-y-8">
       <div className="text-center">
@@ -232,23 +344,30 @@ const DatasetGenerator = () => {
             
             <div>
               <Label>Data Types</Label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {dataTypeOptions.map(option => (
-                  <label key={option.value} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.dataTypes.includes(option.value)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setConfig(prev => ({ ...prev, dataTypes: [...prev.dataTypes, option.value] }));
-                        } else {
-                          setConfig(prev => ({ ...prev, dataTypes: prev.dataTypes.filter(t => t !== option.value) }));
-                        }
-                      }}
-                      className="rounded"
-                    />
-                    <span className="text-sm">{option.label}</span>
-                  </label>
+              <div className="max-h-64 overflow-y-auto mt-2 space-y-4">
+                {Object.entries(groupedOptions).map(([category, options]) => (
+                  <div key={category}>
+                    <h4 className="font-semibold text-sm mb-2 text-primary">{category}</h4>
+                    <div className="grid grid-cols-1 gap-2 ml-4">
+                      {options.map(option => (
+                        <label key={option.value} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={config.dataTypes.includes(option.value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setConfig(prev => ({ ...prev, dataTypes: [...prev.dataTypes, option.value] }));
+                              } else {
+                                setConfig(prev => ({ ...prev, dataTypes: prev.dataTypes.filter(t => t !== option.value) }));
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{option.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

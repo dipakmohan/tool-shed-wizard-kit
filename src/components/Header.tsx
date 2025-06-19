@@ -38,6 +38,9 @@ const Header = () => {
               <DropdownMenuItem asChild>
                 <Link to="/pdf-to-excel">PDF to Excel</Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/pdf-to-ppt">PDF to PowerPoint</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -50,6 +53,19 @@ const Header = () => {
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
                 <Link to="/excel-to-pdf">Excel to PDF</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors p-0 h-auto">
+                PowerPoint <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <Link to="/ppt-to-pdf">PPT to PDF</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -20,6 +20,8 @@ import CameraScanner from "./pages/CameraScanner";
 import ExcelToPdf from "./pages/ExcelToPdf";
 import PdfToExcel from "./pages/PdfToExcel";
 import DatasetGenerator from "./pages/DatasetGenerator";
+import PptToPdf from "./pages/PptToPdf";
+import PdfToPpt from "./pages/PdfToPpt";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,8 @@ const App = () => (
               <Route path="/pdf-merger" element={<PdfMerger />} />
               <Route path="/excel-to-pdf" element={<ExcelToPdf />} />
               <Route path="/pdf-to-excel" element={<PdfToExcel />} />
+              <Route path="/ppt-to-pdf" element={<PptToPdf />} />
+              <Route path="/pdf-to-ppt" element={<PdfToPpt />} />
               <Route path="/dataset-generator" element={<DatasetGenerator />} />
               <Route path="/investment-calculator" element={<InvestmentCalculator />} />
               <Route path="/tax-calculator" element={<TaxCalculator />} />

@@ -8,6 +8,12 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
+
 const ExcelToPdf = () => {
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -75,7 +81,7 @@ const ExcelToPdf = () => {
             ).filter(row => row.length > 0);
             
             if (tableData.length > 0) {
-              (pdf as any).autoTable({
+              pdf.autoTable({
                 head: [tableData[0]],
                 body: tableData.slice(1),
                 startY: 30,

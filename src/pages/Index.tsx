@@ -1,6 +1,6 @@
 
 import ToolCard from "@/components/ToolCard";
-import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan, FileSpreadsheet, Database } from "lucide-react";
+import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan, FileSpreadsheet, Database, Presentation } from "lucide-react";
 
 const tools = [
   {
@@ -51,6 +51,20 @@ const tools = [
     description: "Extract data from PDF files into Excel spreadsheets.",
     href: "/pdf-to-excel",
     color: "purple" as const,
+  },
+  {
+    icon: Presentation,
+    title: "PPT to PDF",
+    description: "Convert PowerPoint presentations to PDF format.",
+    href: "/ppt-to-pdf",
+    color: "accent" as const,
+  },
+  {
+    icon: Presentation,
+    title: "PDF to PPT",
+    description: "Convert PDF files to PowerPoint presentations.",
+    href: "/pdf-to-ppt",
+    color: "primary" as const,
   },
   {
     icon: Database,
