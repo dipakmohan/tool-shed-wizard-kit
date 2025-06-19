@@ -14,7 +14,7 @@ const ImageCompressor = () => {
   const [compressedFile, setCompressedFile] = useState<File | null>(null);
   const [compressedUrl, setCompressedUrl] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState<boolean>(false);
-  const [quality, setQuality] = useState(70); // Initial quality
+  const [quality, setQuality] = useState(70);
   const { toast } = useToast();
 
   const formatBytes = (bytes: number, decimals = 2) => {
@@ -64,33 +64,44 @@ const ImageCompressor = () => {
     setCompressedFile(null);
     setCompressedUrl(null);
 
+    console.log('Starting compression with quality:', quality);
+    console.log('Original file size:', originalFile.size);
+
     const options = {
-      maxWidthOrHeight: 1920,
+      maxSizeMB: Math.max(0.1, (originalFile.size / 1024 / 1024) * (quality / 100)),
+      maxWidthOrHeight: quality < 50 ? 1024 : quality < 80 ? 1920 : 2560,
       useWebWorker: true,
-      initialQuality: quality / 100,
+      quality: quality / 100,
+      fileType: originalFile.type as 'image/jpeg' | 'image/png' | 'image/webp',
     };
+
+    console.log('Compression options:', options);
 
     try {
       const compressed = await imageCompression(originalFile, options);
+      console.log('Compressed file size:', compressed.size);
+      
       setCompressedFile(compressed);
       setCompressedUrl(URL.createObjectURL(compressed));
       
-      if (compressed.size >= originalFile.size) {
+      const compressionRatio = Math.round(100 - (compressed.size / originalFile.size) * 100);
+      
+      if (compressed.size >= originalFile.size * 0.95) {
         toast({
           title: "Image Processed",
-          description: "Could not reduce file size further. The image may already be optimized.",
+          description: "Could not reduce file size significantly. The image may already be optimized or try reducing quality further.",
         });
       } else {
         toast({
           title: "Success!",
-          description: `Image compressed by ${Math.round(100 - (compressed.size / originalFile.size) * 100)}%.`,
+          description: `Image compressed by ${compressionRatio}%. Size reduced from ${formatBytes(originalFile.size)} to ${formatBytes(compressed.size)}.`,
         });
       }
     } catch (error) {
-      console.error(error);
+      console.error('Compression error:', error);
       toast({
         title: "Compression Error",
-        description: "Could not compress the image. Please try another one.",
+        description: "Could not compress the image. Please try another one or adjust the quality settings.",
         variant: "destructive",
       });
     } finally {
@@ -99,10 +110,12 @@ const ImageCompressor = () => {
   }, [originalFile, quality, toast]);
 
   const handleDownload = () => {
-    if (compressedUrl && compressedFile) {
+    if (compressedUrl && compressedFile && originalFile) {
       const link = document.createElement('a');
       link.href = compressedUrl;
-      link.download = `compressed-${originalFile?.name}`;
+      const fileExtension = originalFile.name.split('.').pop();
+      const baseName = originalFile.name.replace(`.${fileExtension}`, '');
+      link.download = `${baseName}_compressed_${quality}%.${fileExtension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -113,7 +126,7 @@ const ImageCompressor = () => {
     <div className="animate-fade-in">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold">Image Compressor</h1>
-        <p className="text-muted-foreground">Reduce image file sizes with adjustable quality.</p>
+        <p className="text-muted-foreground">Reduce image file sizes with adjustable quality settings.</p>
       </div>
       <div className="grid md:grid-cols-2 gap-8 items-start">
         <Card onDragOver={onDragOver} onDrop={onDrop}>
@@ -141,7 +154,19 @@ const ImageCompressor = () => {
                     <span>Compression Quality</span>
                     <span>{quality}%</span>
                   </Label>
-                  <Slider id="quality" defaultValue={[quality]} max={100} step={1} onValueChange={(value) => setQuality(value[0])} disabled={isCompressing} />
+                  <Slider 
+                    id="quality" 
+                    defaultValue={[quality]} 
+                    min={10}
+                    max={95} 
+                    step={5} 
+                    onValueChange={(value) => setQuality(value[0])} 
+                    disabled={isCompressing} 
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Higher compression</span>
+                    <span>Better quality</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -167,15 +192,15 @@ const ImageCompressor = () => {
               </div>
             )}
           </CardContent>
-          {compressedFile && (
+          {compressedFile && originalFile && (
             <CardFooter className="flex-col gap-4">
-               {originalFile && compressedFile.size < originalFile.size ? (
+               {compressedFile.size < originalFile.size * 0.95 ? (
                  <p className="text-sm text-center text-green-600 dark:text-green-500 font-medium">
                     New size: {formatBytes(compressedFile.size)} ({Math.round(100 - (compressedFile.size / originalFile.size) * 100)}% smaller)
                   </p>
                ) : (
                  <p className="text-sm text-center text-muted-foreground">
-                    New size: {formatBytes(compressedFile.size)}. Could not reduce file size.
+                    New size: {formatBytes(compressedFile.size)}. Minimal reduction achieved.
                  </p>
                )}
               <Button onClick={handleDownload} className="w-full">

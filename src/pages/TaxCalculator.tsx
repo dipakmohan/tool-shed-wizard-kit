@@ -17,6 +17,13 @@ interface TaxCalculation {
   totalTax: number;
   netIncome: number;
   regime: string;
+  financialYear: string;
+}
+
+interface TaxSlab {
+  min: number;
+  max: number;
+  rate: number;
 }
 
 const TaxCalculator = () => {
@@ -24,50 +31,92 @@ const TaxCalculator = () => {
   const [deductions, setDeductions] = useState<string>('');
   const [age, setAge] = useState<string>('below60');
   const [regime, setRegime] = useState<string>('new');
+  const [financialYear, setFinancialYear] = useState<string>('2023-24');
   const [result, setResult] = useState<TaxCalculation | null>(null);
 
-  const calculateOldRegimeTax = (taxableIncome: number, ageCategory: string): number => {
-    let tax = 0;
-    
-    // Tax exemption limits based on age
-    let exemptionLimit = 250000; // Below 60
-    if (ageCategory === '60to80') exemptionLimit = 300000; // 60-80 years
-    if (ageCategory === 'above80') exemptionLimit = 500000; // Above 80 years
+  const getOldRegimeTaxSlabs = (fy: string, ageCategory: string) => {
+    const slabs: { [key: string]: { exemption: { [age: string]: number }, slabs: TaxSlab[] } } = {
+      '2023-24': {
+        exemption: { below60: 250000, '60to80': 300000, 'above80': 500000 },
+        slabs: [
+          { min: 0, max: 250000, rate: 0.05 },
+          { min: 250000, max: 500000, rate: 0.20 },
+          { min: 500000, max: 1000000, rate: 0.30 },
+          { min: 1000000, max: Infinity, rate: 0.30 }
+        ]
+      },
+      '2024-25': {
+        exemption: { below60: 300000, '60to80': 350000, 'above80': 500000 },
+        slabs: [
+          { min: 0, max: 300000, rate: 0.05 },
+          { min: 300000, max: 600000, rate: 0.20 },
+          { min: 600000, max: 1200000, rate: 0.30 },
+          { min: 1200000, max: Infinity, rate: 0.30 }
+        ]
+      }
+    };
+    return slabs[fy] || slabs['2023-24'];
+  };
 
+  const getNewRegimeTaxSlabs = (fy: string) => {
+    const slabs: { [key: string]: { exemption: number, slabs: TaxSlab[] } } = {
+      '2023-24': {
+        exemption: 300000,
+        slabs: [
+          { min: 300000, max: 600000, rate: 0.05 },
+          { min: 600000, max: 900000, rate: 0.10 },
+          { min: 900000, max: 1200000, rate: 0.15 },
+          { min: 1200000, max: 1500000, rate: 0.20 },
+          { min: 1500000, max: Infinity, rate: 0.30 }
+        ]
+      },
+      '2024-25': {
+        exemption: 300000,
+        slabs: [
+          { min: 300000, max: 700000, rate: 0.05 },
+          { min: 700000, max: 1000000, rate: 0.10 },
+          { min: 1000000, max: 1200000, rate: 0.15 },
+          { min: 1200000, max: 1500000, rate: 0.20 },
+          { min: 1500000, max: Infinity, rate: 0.30 }
+        ]
+      }
+    };
+    return slabs[fy] || slabs['2023-24'];
+  };
+
+  const calculateOldRegimeTax = (taxableIncome: number, ageCategory: string, fy: string): number => {
+    const config = getOldRegimeTaxSlabs(fy, ageCategory);
+    const exemptionLimit = config.exemption[ageCategory];
+    
     if (taxableIncome <= exemptionLimit) return 0;
 
-    const taxableAmount = taxableIncome - exemptionLimit;
+    let tax = 0;
+    let remainingIncome = taxableIncome - exemptionLimit;
 
-    // Tax slabs for old regime
-    if (taxableAmount <= 250000) {
-      tax = taxableAmount * 0.05;
-    } else if (taxableAmount <= 500000) {
-      tax = 250000 * 0.05 + (taxableAmount - 250000) * 0.20;
-    } else if (taxableAmount <= 1000000) {
-      tax = 250000 * 0.05 + 250000 * 0.20 + (taxableAmount - 500000) * 0.30;
-    } else {
-      tax = 250000 * 0.05 + 250000 * 0.20 + 500000 * 0.30 + (taxableAmount - 1000000) * 0.30;
+    for (const slab of config.slabs) {
+      if (remainingIncome <= 0) break;
+      const taxableInSlab = Math.min(remainingIncome, slab.max - slab.min);
+      tax += taxableInSlab * slab.rate;
+      remainingIncome -= taxableInSlab;
     }
 
     return tax;
   };
 
-  const calculateNewRegimeTax = (taxableIncome: number): number => {
+  const calculateNewRegimeTax = (taxableIncome: number, fy: string): number => {
+    const config = getNewRegimeTaxSlabs(fy);
+    
+    if (taxableIncome <= config.exemption) return 0;
+
     let tax = 0;
+    let remainingIncome = taxableIncome;
 
-    // New regime tax slabs (2023-24 onwards)
-    if (taxableIncome <= 300000) return 0;
-
-    if (taxableIncome <= 600000) {
-      tax = (taxableIncome - 300000) * 0.05;
-    } else if (taxableIncome <= 900000) {
-      tax = 300000 * 0.05 + (taxableIncome - 600000) * 0.10;
-    } else if (taxableIncome <= 1200000) {
-      tax = 300000 * 0.05 + 300000 * 0.10 + (taxableIncome - 900000) * 0.15;
-    } else if (taxableIncome <= 1500000) {
-      tax = 300000 * 0.05 + 300000 * 0.10 + 300000 * 0.15 + (taxableIncome - 1200000) * 0.20;
-    } else {
-      tax = 300000 * 0.05 + 300000 * 0.10 + 300000 * 0.15 + 300000 * 0.20 + (taxableIncome - 1500000) * 0.30;
+    for (const slab of config.slabs) {
+      if (remainingIncome <= slab.min) break;
+      const taxableInSlab = Math.min(remainingIncome - slab.min, slab.max - slab.min);
+      if (taxableInSlab > 0) {
+        tax += taxableInSlab * slab.rate;
+      }
     }
 
     return tax;
@@ -75,17 +124,16 @@ const TaxCalculator = () => {
 
   const calculateTax = () => {
     const totalIncome = parseFloat(income);
-    const totalDeductions = regime === 'old' ? parseFloat(deductions) : 0; // New regime has no major deductions
+    const totalDeductions = regime === 'old' ? parseFloat(deductions) : 0;
     const taxableIncome = Math.max(0, totalIncome - totalDeductions);
 
     let incomeTax: number;
     if (regime === 'old') {
-      incomeTax = calculateOldRegimeTax(taxableIncome, age);
+      incomeTax = calculateOldRegimeTax(taxableIncome, age, financialYear);
     } else {
-      incomeTax = calculateNewRegimeTax(taxableIncome);
+      incomeTax = calculateNewRegimeTax(taxableIncome, financialYear);
     }
 
-    // Add Health & Education Cess (4%)
     const cess = incomeTax * 0.04;
     const totalTax = incomeTax + cess;
     const netIncome = totalIncome - totalTax;
@@ -98,7 +146,8 @@ const TaxCalculator = () => {
       cess,
       totalTax,
       netIncome,
-      regime: regime === 'old' ? 'Old Regime' : 'New Regime'
+      regime: regime === 'old' ? 'Old Regime' : 'New Regime',
+      financialYear
     });
   };
 
@@ -114,7 +163,7 @@ const TaxCalculator = () => {
     <div className="animate-fade-in space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold">Indian Income Tax Calculator</h1>
-        <p className="text-muted-foreground">Calculate your income tax for FY 2023-24 onwards under both regimes.</p>
+        <p className="text-muted-foreground">Calculate your income tax with updated tax slabs for different financial years.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
@@ -127,17 +176,32 @@ const TaxCalculator = () => {
             <CardDescription>Enter your income details to calculate tax liability.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>Tax Regime</Label>
-              <Select value={regime} onValueChange={setRegime}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New Tax Regime (2023-24 onwards)</SelectItem>
-                  <SelectItem value="old">Old Tax Regime</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Financial Year</Label>
+                <Select value={financialYear} onValueChange={setFinancialYear}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="2023-24">FY 2023-24 (AY 2024-25)</SelectItem>
+                    <SelectItem value="2024-25">FY 2024-25 (AY 2025-26)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Tax Regime</Label>
+                <Select value={regime} onValueChange={setRegime}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New Tax Regime</SelectItem>
+                    <SelectItem value="old">Old Tax Regime</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -207,9 +271,9 @@ const TaxCalculator = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Receipt className="w-5 h-5" />
-                Tax Calculation ({result.regime})
+                Tax Calculation ({result.regime} - FY {result.financialYear})
               </CardTitle>
-              <CardDescription>Your detailed tax breakdown for FY 2023-24.</CardDescription>
+              <CardDescription>Your detailed tax breakdown.</CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="summary" className="w-full">
@@ -279,7 +343,7 @@ const TaxCalculator = () => {
               </Tabs>
 
               <div className="text-xs text-muted-foreground mt-4 space-y-1">
-                <p>* Calculations are based on current tax slabs and may vary.</p>
+                <p>* Calculations are based on {result.financialYear} tax slabs and may vary.</p>
                 <p>* Consult a tax advisor for accurate tax planning.</p>
                 <p>* Surcharge applicable for income above ₹50L/₹1Cr not included.</p>
               </div>
