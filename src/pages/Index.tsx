@@ -1,6 +1,6 @@
 
 import ToolCard from "@/components/ToolCard";
-import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan } from "lucide-react";
+import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan, FileSpreadsheet, Database } from "lucide-react";
 
 const tools = [
   {
@@ -37,6 +37,27 @@ const tools = [
     description: "Combine multiple PDF files into a single document.",
     href: "/pdf-merger",
     color: "yellow" as const,
+  },
+  {
+    icon: FileSpreadsheet,
+    title: "Excel to PDF",
+    description: "Convert Excel spreadsheets to PDF format.",
+    href: "/excel-to-pdf",
+    color: "green" as const,
+  },
+  {
+    icon: FileSpreadsheet,
+    title: "PDF to Excel",
+    description: "Extract data from PDF files into Excel spreadsheets.",
+    href: "/pdf-to-excel",
+    color: "purple" as const,
+  },
+  {
+    icon: Database,
+    title: "Dataset Generator",
+    description: "Generate custom datasets with various data types and configurations.",
+    href: "/dataset-generator",
+    color: "accent" as const,
   },
   {
     icon: Calculator,

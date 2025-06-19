@@ -17,6 +17,9 @@ import Footer from "./components/Footer";
 import UnitConverter from "./pages/UnitConverter";
 import LoanCalculator from "./pages/LoanCalculator";
 import CameraScanner from "./pages/CameraScanner";
+import ExcelToPdf from "./pages/ExcelToPdf";
+import PdfToExcel from "./pages/PdfToExcel";
+import DatasetGenerator from "./pages/DatasetGenerator";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +38,9 @@ const App = () => (
               <Route path="/image-compressor" element={<ImageCompressor />} />
               <Route path="/pdf-tools" element={<PdfTools />} />
               <Route path="/pdf-merger" element={<PdfMerger />} />
+              <Route path="/excel-to-pdf" element={<ExcelToPdf />} />
+              <Route path="/pdf-to-excel" element={<PdfToExcel />} />
+              <Route path="/dataset-generator" element={<DatasetGenerator />} />
               <Route path="/investment-calculator" element={<InvestmentCalculator />} />
               <Route path="/tax-calculator" element={<TaxCalculator />} />
               <Route path="/unit-converter" element={<UnitConverter />} />

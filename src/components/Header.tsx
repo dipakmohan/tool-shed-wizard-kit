@@ -35,6 +35,22 @@ const Header = () => {
               <DropdownMenuItem asChild>
                 <Link to="/pdf-merger">Merge PDFs</Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/pdf-to-excel">PDF to Excel</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors p-0 h-auto">
+                Excel Tools <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <Link to="/excel-to-pdf">Excel to PDF</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -58,6 +74,7 @@ const Header = () => {
           </DropdownMenu>
 
           <Link to="/unit-converter" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Unit Converter</Link>
+          <Link to="/dataset-generator" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Dataset Generator</Link>
         </nav>
       </div>
     </header>
