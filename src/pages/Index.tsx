@@ -1,6 +1,6 @@
 
 import ToolCard from "@/components/ToolCard";
-import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan, FileSpreadsheet, Database, Presentation, Mic } from "lucide-react";
+import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan, FileSpreadsheet, Database, Presentation, Mic, Keyboard } from "lucide-react";
 
 const tools = [
   {
@@ -108,6 +108,20 @@ const tools = [
     href: "/tax-calculator",
     color: "primary" as const,
   },
+  {
+    icon: Receipt,
+    title: "GST Calculator",
+    description: "Calculate GST with different tax slabs for your invoices and business needs.",
+    href: "/gst-calculator",
+    color: "green" as const,
+  },
+  {
+    icon: Keyboard,
+    title: "Typing Speed Tester",
+    description: "Test and improve your typing speed and accuracy with real-time feedback.",
+    href: "/typing-speed-tester",
+    color: "purple" as const,
+  },
 ];
 
 const Index = () => {
@@ -119,7 +133,7 @@ const Index = () => {
       <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto animate-fade-in" style={{animationDelay: '0.1s'}}>
         Quickly and easily convert, compress, and edit your files with our suite of powerful online tools. Now with AI-powered camera scanning and voice conversion!
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg: 3 xl:grid-cols-4 gap-8">
         {tools.map((tool, index) => (
           <ToolCard
             key={tool.href}

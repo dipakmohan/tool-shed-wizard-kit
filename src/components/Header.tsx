@@ -87,11 +87,15 @@ const Header = () => {
               <DropdownMenuItem asChild>
                 <Link to="/tax-calculator">Tax Calculator</Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/gst-calculator">GST Calculator</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <Link to="/unit-converter" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Unit Converter</Link>
           <Link to="/dataset-generator" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Dataset Generator</Link>
+          <Link to="/typing-speed-tester" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Typing Tester</Link>
         </nav>
       </div>
     </header>

@@ -23,6 +23,8 @@ import DatasetGenerator from "./pages/DatasetGenerator";
 import PptToPdf from "./pages/PptToPdf";
 import PdfToPpt from "./pages/PdfToPpt";
 import VoiceToText from "./pages/VoiceToText";
+import GstCalculator from "./pages/GstCalculator";
+import TypingSpeedTester from "./pages/TypingSpeedTester";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,8 @@ const App = () => (
               <Route path="/unit-converter" element={<UnitConverter />} />
               <Route path="/loan-calculator" element={<LoanCalculator />} />
               <Route path="/camera-scanner" element={<CameraScanner />} />
+              <Route path="/gst-calculator" element={<GstCalculator />} />
+              <Route path="/typing-speed-tester" element={<TypingSpeedTester />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
