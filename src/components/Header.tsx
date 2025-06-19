@@ -20,6 +20,7 @@ const Header = () => {
         <nav className="hidden md:flex flex-wrap gap-4">
           <Link to="/camera-scanner" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors font-semibold">Camera Scanner</Link>
           <Link to="/image-to-text" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Image to Text</Link>
+          <Link to="/voice-to-text" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Voice to Text</Link>
           <Link to="/image-compressor" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Image Compressor</Link>
           
           <DropdownMenu>

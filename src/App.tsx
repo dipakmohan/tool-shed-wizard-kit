@@ -22,6 +22,7 @@ import PdfToExcel from "./pages/PdfToExcel";
 import DatasetGenerator from "./pages/DatasetGenerator";
 import PptToPdf from "./pages/PptToPdf";
 import PdfToPpt from "./pages/PdfToPpt";
+import VoiceToText from "./pages/VoiceToText";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/image-to-text" element={<ImageToText />} />
+              <Route path="/voice-to-text" element={<VoiceToText />} />
               <Route path="/image-compressor" element={<ImageCompressor />} />
               <Route path="/pdf-tools" element={<PdfTools />} />
               <Route path="/pdf-merger" element={<PdfMerger />} />
