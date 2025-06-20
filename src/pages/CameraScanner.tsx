@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,14 +50,6 @@ const CameraScanner = () => {
     setIsLoading(true);
     setCameraError(null);
     
-    // Set a timeout to prevent infinite loading
-    loadingTimeoutRef.current = setTimeout(() => {
-      console.log('Camera loading timeout');
-      setIsLoading(false);
-      setCameraError('Camera loading timeout. Please try again.');
-      cleanup();
-    }, 10000); // 10 second timeout
-    
     try {
       // Check if getUserMedia is supported
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -78,13 +69,36 @@ const CameraScanner = () => {
       streamRef.current = stream;
       
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        
-        // Add multiple event handlers to ensure proper loading
         const video = videoRef.current;
+        video.srcObject = stream;
         
-        const handleLoadedMetadata = () => {
-          console.log('Video metadata loaded');
+        // Set a shorter timeout and use multiple success conditions
+        loadingTimeoutRef.current = setTimeout(() => {
+          console.log('Camera loading timeout - checking if video is ready');
+          // Check if video actually has dimensions (meaning it's working)
+          if (video.videoWidth > 0 && video.videoHeight > 0) {
+            console.log('Video is actually ready despite timeout');
+            if (loadingTimeoutRef.current) {
+              clearTimeout(loadingTimeoutRef.current);
+              loadingTimeoutRef.current = null;
+            }
+            setIsScanning(true);
+            setIsLoading(false);
+            toast({
+              title: "Camera Ready",
+              description: "Camera is now active. You can capture images.",
+            });
+          } else {
+            console.log('Video still not ready, showing timeout error');
+            setIsLoading(false);
+            setCameraError('Camera loading timeout. Please try again.');
+            cleanup();
+          }
+        }, 5000); // Reduced timeout to 5 seconds
+        
+        // Multiple event listeners for better compatibility
+        const handleSuccess = () => {
+          console.log('Video ready - clearing timeout and enabling camera');
           if (loadingTimeoutRef.current) {
             clearTimeout(loadingTimeoutRef.current);
             loadingTimeoutRef.current = null;
@@ -97,35 +111,71 @@ const CameraScanner = () => {
           });
         };
 
+        const handleLoadedMetadata = () => {
+          console.log('Video metadata loaded');
+          handleSuccess();
+        };
+
         const handleCanPlay = () => {
           console.log('Video can play');
-          video.play().catch(console.error);
+          handleSuccess();
+        };
+
+        const handleLoadedData = () => {
+          console.log('Video data loaded');
+          handleSuccess();
         };
 
         const handleError = (error: Event) => {
           console.error('Video error:', error);
+          if (loadingTimeoutRef.current) {
+            clearTimeout(loadingTimeoutRef.current);
+            loadingTimeoutRef.current = null;
+          }
           setIsLoading(false);
           setCameraError('Error loading camera stream');
           cleanup();
         };
 
+        // Add multiple event listeners
         video.addEventListener('loadedmetadata', handleLoadedMetadata);
         video.addEventListener('canplay', handleCanPlay);
+        video.addEventListener('loadeddata', handleLoadedData);
         video.addEventListener('error', handleError);
         
-        // Force play the video
-        try {
-          await video.play();
-          console.log('Video play started');
-        } catch (playError) {
-          console.error('Video play error:', playError);
-          // Don't fail here, some browsers require user interaction
-        }
+        // Force play and add additional check
+        const playVideo = async () => {
+          try {
+            await video.play();
+            console.log('Video play started');
+            
+            // Additional fallback check after play
+            setTimeout(() => {
+              if (video.videoWidth > 0 && video.videoHeight > 0 && isLoading) {
+                console.log('Fallback success check - video dimensions detected');
+                handleSuccess();
+              }
+            }, 1000);
+            
+          } catch (playError) {
+            console.error('Video play error:', playError);
+            // Try without autoplay
+            console.log('Trying to enable camera without autoplay');
+            setTimeout(() => {
+              if (video.videoWidth > 0 && video.videoHeight > 0) {
+                handleSuccess();
+              }
+            }, 2000);
+          }
+        };
 
-        // Cleanup event listeners on component unmount
+        playVideo();
+
+        // Cleanup event listeners
         return () => {
           video.removeEventListener('loadedmetadata', handleLoadedMetadata);
           video.removeEventListener('canplay', handleCanPlay);
+          video.removeEventListener('loadeddata', handleLoadedData);
           video.removeEventListener('error', handleError);
         };
       }
@@ -157,7 +207,7 @@ const CameraScanner = () => {
         variant: "destructive",
       });
     }
-  }, [toast, cleanup]);
+  }, [toast, cleanup, isLoading]);
 
   const stopCamera = useCallback(() => {
     cleanup();
