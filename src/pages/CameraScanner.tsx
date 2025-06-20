@@ -23,7 +23,6 @@ const CameraScanner = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   // Cleanup function
@@ -31,10 +30,6 @@ const CameraScanner = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
-    }
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-      loadingTimeoutRef.current = null;
     }
     setIsScanning(false);
     setIsLoading(false);
@@ -72,37 +67,9 @@ const CameraScanner = () => {
         const video = videoRef.current;
         video.srcObject = stream;
         
-        // Set a shorter timeout and use multiple success conditions
-        loadingTimeoutRef.current = setTimeout(() => {
-          console.log('Camera loading timeout - checking if video is ready');
-          // Check if video actually has dimensions (meaning it's working)
-          if (video.videoWidth > 0 && video.videoHeight > 0) {
-            console.log('Video is actually ready despite timeout');
-            if (loadingTimeoutRef.current) {
-              clearTimeout(loadingTimeoutRef.current);
-              loadingTimeoutRef.current = null;
-            }
-            setIsScanning(true);
-            setIsLoading(false);
-            toast({
-              title: "Camera Ready",
-              description: "Camera is now active. You can capture images.",
-            });
-          } else {
-            console.log('Video still not ready, showing timeout error');
-            setIsLoading(false);
-            setCameraError('Camera loading timeout. Please try again.');
-            cleanup();
-          }
-        }, 5000); // Reduced timeout to 5 seconds
-        
-        // Multiple event listeners for better compatibility
-        const handleSuccess = () => {
-          console.log('Video ready - clearing timeout and enabling camera');
-          if (loadingTimeoutRef.current) {
-            clearTimeout(loadingTimeoutRef.current);
-            loadingTimeoutRef.current = null;
-          }
+        // Simple approach - wait for the video to be ready
+        const handleVideoReady = () => {
+          console.log('Video is ready, enabling camera');
           setIsScanning(true);
           setIsLoading(false);
           toast({
@@ -111,80 +78,38 @@ const CameraScanner = () => {
           });
         };
 
-        const handleLoadedMetadata = () => {
-          console.log('Video metadata loaded');
-          handleSuccess();
+        // Use a single event listener approach
+        video.onloadedmetadata = () => {
+          console.log('Video metadata loaded, attempting to play');
+          video.play().then(() => {
+            console.log('Video playing successfully');
+            // Give it a moment to start streaming
+            setTimeout(handleVideoReady, 500);
+          }).catch((error) => {
+            console.error('Video play error:', error);
+            // Try without autoplay
+            setTimeout(handleVideoReady, 1000);
+          });
         };
 
-        const handleCanPlay = () => {
-          console.log('Video can play');
-          handleSuccess();
-        };
-
-        const handleLoadedData = () => {
-          console.log('Video data loaded');
-          handleSuccess();
-        };
-
-        const handleError = (error: Event) => {
+        video.onerror = (error) => {
           console.error('Video error:', error);
-          if (loadingTimeoutRef.current) {
-            clearTimeout(loadingTimeoutRef.current);
-            loadingTimeoutRef.current = null;
-          }
           setIsLoading(false);
           setCameraError('Error loading camera stream');
           cleanup();
         };
 
-        // Add multiple event listeners
-        video.addEventListener('loadedmetadata', handleLoadedMetadata);
-        video.addEventListener('canplay', handleCanPlay);
-        video.addEventListener('loadeddata', handleLoadedData);
-        video.addEventListener('error', handleError);
-        
-        // Force play and add additional check
-        const playVideo = async () => {
-          try {
-            await video.play();
-            console.log('Video play started');
-            
-            // Additional fallback check after play
-            setTimeout(() => {
-              if (video.videoWidth > 0 && video.videoHeight > 0 && isLoading) {
-                console.log('Fallback success check - video dimensions detected');
-                handleSuccess();
-              }
-            }, 1000);
-            
-          } catch (playError) {
-            console.error('Video play error:', playError);
-            // Try without autoplay
-            console.log('Trying to enable camera without autoplay');
-            setTimeout(() => {
-              if (video.videoWidth > 0 && video.videoHeight > 0) {
-                handleSuccess();
-              }
-            }, 2000);
+        // Fallback timeout
+        setTimeout(() => {
+          if (isLoading) {
+            console.log('Fallback timeout - forcing camera ready');
+            handleVideoReady();
           }
-        };
+        }, 3000);
 
-        playVideo();
-
-        // Cleanup event listeners
-        return () => {
-          video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-          video.removeEventListener('canplay', handleCanPlay);
-          video.removeEventListener('loadeddata', handleLoadedData);
-          video.removeEventListener('error', handleError);
-        };
       }
     } catch (error: any) {
       console.error('Camera error:', error);
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = null;
-      }
       setIsLoading(false);
       let errorMessage = 'Unable to access camera. ';
       
