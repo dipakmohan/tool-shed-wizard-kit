@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,12 +24,40 @@ const CameraScanner = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+
+  // Cleanup function
+  const cleanup = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
+    }
+    setIsScanning(false);
+    setIsLoading(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return cleanup;
+  }, [cleanup]);
 
   const startCamera = useCallback(async () => {
     console.log('Starting camera...');
     setIsLoading(true);
     setCameraError(null);
+    
+    // Set a timeout to prevent infinite loading
+    loadingTimeoutRef.current = setTimeout(() => {
+      console.log('Camera loading timeout');
+      setIsLoading(false);
+      setCameraError('Camera loading timeout. Please try again.');
+      cleanup();
+    }, 10000); // 10 second timeout
     
     try {
       // Check if getUserMedia is supported
@@ -45,13 +74,21 @@ const CameraScanner = () => {
         }
       });
       
-      console.log('Camera access granted');
+      console.log('Camera access granted, stream obtained');
       streamRef.current = stream;
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
+        
+        // Add multiple event handlers to ensure proper loading
+        const video = videoRef.current;
+        
+        const handleLoadedMetadata = () => {
           console.log('Video metadata loaded');
+          if (loadingTimeoutRef.current) {
+            clearTimeout(loadingTimeoutRef.current);
+            loadingTimeoutRef.current = null;
+          }
           setIsScanning(true);
           setIsLoading(false);
           toast({
@@ -59,9 +96,45 @@ const CameraScanner = () => {
             description: "Camera is now active. You can capture images.",
           });
         };
+
+        const handleCanPlay = () => {
+          console.log('Video can play');
+          video.play().catch(console.error);
+        };
+
+        const handleError = (error: Event) => {
+          console.error('Video error:', error);
+          setIsLoading(false);
+          setCameraError('Error loading camera stream');
+          cleanup();
+        };
+
+        video.addEventListener('loadedmetadata', handleLoadedMetadata);
+        video.addEventListener('canplay', handleCanPlay);
+        video.addEventListener('error', handleError);
+        
+        // Force play the video
+        try {
+          await video.play();
+          console.log('Video play started');
+        } catch (playError) {
+          console.error('Video play error:', playError);
+          // Don't fail here, some browsers require user interaction
+        }
+
+        // Cleanup event listeners on component unmount
+        return () => {
+          video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          video.removeEventListener('canplay', handleCanPlay);
+          video.removeEventListener('error', handleError);
+        };
       }
     } catch (error: any) {
       console.error('Camera error:', error);
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
       setIsLoading(false);
       let errorMessage = 'Unable to access camera. ';
       
@@ -84,15 +157,11 @@ const CameraScanner = () => {
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast, cleanup]);
 
   const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setIsScanning(false);
-  }, []);
+    cleanup();
+  }, [cleanup]);
 
   const captureImage = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -245,6 +314,7 @@ const CameraScanner = () => {
                   ref={videoRef}
                   autoPlay
                   playsInline
+                  muted
                   className="w-full h-full object-cover"
                 />
               ) : capturedImage ? (
