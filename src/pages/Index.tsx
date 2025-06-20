@@ -1,6 +1,6 @@
 
 import ToolCard from "@/components/ToolCard";
-import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan, FileSpreadsheet, Database, Presentation, Mic, Keyboard } from "lucide-react";
+import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan, FileSpreadsheet, Database, Presentation, Mic, Keyboard, BookOpen } from "lucide-react";
 
 const tools = [
   {
@@ -23,6 +23,13 @@ const tools = [
     description: "Convert speech to text with multi-language support and translation.",
     href: "/voice-to-text",
     color: "accent" as const,
+  },
+  {
+    icon: BookOpen,
+    title: "Document Reader",
+    description: "Upload PDF or Word documents and have them read aloud at different speeds.",
+    href: "/document-reader",
+    color: "purple" as const,
   },
   {
     icon: Image,
@@ -131,7 +138,7 @@ const Index = () => {
         Your All-in-One Digital Toolkit
       </h1>
       <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto animate-fade-in" style={{animationDelay: '0.1s'}}>
-        Quickly and easily convert, compress, and edit your files with our suite of powerful online tools. Now with AI-powered camera scanning and voice conversion!
+        Quickly and easily convert, compress, and edit your files with our suite of powerful online tools. Now with AI-powered camera scanning, voice conversion, and document reading!
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg: 3 xl:grid-cols-4 gap-8">
         {tools.map((tool, index) => (

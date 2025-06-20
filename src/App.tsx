@@ -25,6 +25,7 @@ import PdfToPpt from "./pages/PdfToPpt";
 import VoiceToText from "./pages/VoiceToText";
 import GstCalculator from "./pages/GstCalculator";
 import TypingSpeedTester from "./pages/TypingSpeedTester";
+import DocumentReader from "./pages/DocumentReader";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/camera-scanner" element={<CameraScanner />} />
               <Route path="/gst-calculator" element={<GstCalculator />} />
               <Route path="/typing-speed-tester" element={<TypingSpeedTester />} />
+              <Route path="/document-reader" element={<DocumentReader />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
