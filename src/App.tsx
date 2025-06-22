@@ -27,6 +27,7 @@ import GstCalculator from "./pages/GstCalculator";
 import TypingSpeedTester from "./pages/TypingSpeedTester";
 import DocumentReader from "./pages/DocumentReader";
 import Dictionary from "./pages/Dictionary";
+import IncomeTaxReturn from "./pages/IncomeTaxReturn";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/dataset-generator" element={<DatasetGenerator />} />
               <Route path="/investment-calculator" element={<InvestmentCalculator />} />
               <Route path="/tax-calculator" element={<TaxCalculator />} />
+              <Route path="/income-tax-return" element={<IncomeTaxReturn />} />
               <Route path="/unit-converter" element={<UnitConverter />} />
               <Route path="/loan-calculator" element={<LoanCalculator />} />
               <Route path="/camera-scanner" element={<CameraScanner />} />

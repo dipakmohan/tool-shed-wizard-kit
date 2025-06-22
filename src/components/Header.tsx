@@ -90,6 +90,9 @@ const Header = () => {
                 <Link to="/tax-calculator">Tax Calculator</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
+                <Link to="/income-tax-return">Income Tax Return</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link to="/gst-calculator">GST Calculator</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
