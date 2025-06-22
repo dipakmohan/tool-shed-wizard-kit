@@ -26,6 +26,7 @@ import VoiceToText from "./pages/VoiceToText";
 import GstCalculator from "./pages/GstCalculator";
 import TypingSpeedTester from "./pages/TypingSpeedTester";
 import DocumentReader from "./pages/DocumentReader";
+import Dictionary from "./pages/Dictionary";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/gst-calculator" element={<GstCalculator />} />
               <Route path="/typing-speed-tester" element={<TypingSpeedTester />} />
               <Route path="/document-reader" element={<DocumentReader />} />
+              <Route path="/dictionary" element={<Dictionary />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
