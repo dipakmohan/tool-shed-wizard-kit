@@ -24,6 +24,7 @@ const Header = () => {
           <Link to="/dictionary" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Dictionary</Link>
           <Link to="/document-reader" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Document Reader</Link>
           <Link to="/personal-trainer" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Personal Trainer</Link>
+          <Link to="/physiotherapy-tools" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Physiotherapy Tools</Link>
           <Link to="/image-compressor" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Image Compressor</Link>
           
           <DropdownMenu>
