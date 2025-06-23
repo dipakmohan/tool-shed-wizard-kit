@@ -59,9 +59,10 @@ const TaxCalculator = () => {
   };
 
   const getNewRegimeTaxSlabs = (fy: string) => {
-    const slabs: { [key: string]: { exemption: number, slabs: TaxSlab[] } } = {
+    const slabs: { [key: string]: { exemption: number, slabs: TaxSlab[], standardDeduction: number } } = {
       '2023-24': {
         exemption: 300000,
+        standardDeduction: 50000,
         slabs: [
           { min: 300000, max: 600000, rate: 0.05 },
           { min: 600000, max: 900000, rate: 0.10 },
@@ -72,6 +73,7 @@ const TaxCalculator = () => {
       },
       '2024-25': {
         exemption: 300000,
+        standardDeduction: 75000, // Updated standard deduction for FY 2024-25
         slabs: [
           { min: 300000, max: 700000, rate: 0.05 },
           { min: 700000, max: 1000000, rate: 0.10 },
@@ -124,7 +126,9 @@ const TaxCalculator = () => {
 
   const calculateTax = () => {
     const totalIncome = parseFloat(income);
-    const totalDeductions = regime === 'old' ? parseFloat(deductions) : 0;
+    const config = getNewRegimeTaxSlabs(financialYear);
+    const standardDeduction = regime === 'new' ? config.standardDeduction : 50000;
+    const totalDeductions = regime === 'old' ? parseFloat(deductions) + standardDeduction : standardDeduction;
     const taxableIncome = Math.max(0, totalIncome - totalDeductions);
 
     let incomeTax: number;
@@ -251,7 +255,7 @@ const TaxCalculator = () => {
               <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">New Regime Benefits:</p>
                 <ul className="text-xs text-blue-600 dark:text-blue-400 mt-2 space-y-1">
-                  <li>• Standard deduction: ₹50,000</li>
+                  <li>• Standard deduction: ₹{getNewRegimeTaxSlabs(financialYear).standardDeduction.toLocaleString('en-IN')}</li>
                   <li>• No major deductions like 80C, 80D allowed</li>
                   <li>• Lower tax rates</li>
                   <li>• Rebate u/s 87A: ₹25,000 for income up to ₹7L</li>

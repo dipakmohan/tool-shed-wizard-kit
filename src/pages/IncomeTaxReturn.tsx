@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -110,7 +109,7 @@ const IncomeTaxReturn = () => {
   const calculateTaxableIncome = () => {
     const totalIncome = calculateTotalIncome();
     const totalDeductions = calculateTotalDeductions();
-    const standardDeduction = 50000; // For FY 2024-25
+    const standardDeduction = 75000; // Updated for new tax regime FY 2024-25
     return Math.max(0, totalIncome - totalDeductions - standardDeduction);
   };
 
@@ -118,7 +117,7 @@ const IncomeTaxReturn = () => {
     const taxableIncome = calculateTaxableIncome();
     let tax = 0;
 
-    // New Tax Regime Slabs for FY 2024-25
+    // Updated New Tax Regime Slabs for FY 2024-25
     if (taxableIncome > 300000) {
       if (taxableIncome <= 700000) {
         tax += (Math.min(taxableIncome, 700000) - 300000) * 0.05;
@@ -265,7 +264,7 @@ const IncomeTaxReturn = () => {
           File your ITR for Financial Year 2024-25 (Assessment Year 2025-26)
         </p>
         <div className="mt-4 text-sm text-blue-600 dark:text-blue-400">
-          Using Saral-1 Form | New Tax Regime | Standard Deduction: ₹50,000
+          Using Saral-1 Form | New Tax Regime | Standard Deduction: ₹75,000
         </div>
       </div>
 
@@ -844,7 +843,7 @@ const IncomeTaxReturn = () => {
                       <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border">
                         <div className="flex justify-between items-center">
                           <span>Standard Deduction (Auto Applied):</span>
-                          <span className="font-semibold text-green-600">₹50,000</span>
+                          <span className="font-semibold text-green-600">₹75,000</span>
                         </div>
                       </div>
                       
@@ -852,7 +851,7 @@ const IncomeTaxReturn = () => {
                         <div className="flex justify-between items-center">
                           <span className="font-semibold">Total Deductions:</span>
                           <span className="text-xl font-bold text-blue-600">
-                            ₹{(calculateTotalDeductions() + 50000).toLocaleString('en-IN')}
+                            ₹{(calculateTotalDeductions() + 75000).toLocaleString('en-IN')}
                           </span>
                         </div>
                       </div>
@@ -1029,7 +1028,7 @@ const IncomeTaxReturn = () => {
                       </div>
                       <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border">
                         <p className="text-sm text-muted-foreground">Total Deductions</p>
-                        <p className="text-xl font-bold">₹{(calculateTotalDeductions() + 50000).toLocaleString('en-IN')}</p>
+                        <p className="text-xl font-bold">₹{(calculateTotalDeductions() + 75000).toLocaleString('en-IN')}</p>
                       </div>
                       <div className="p-4 bg-orange-50 dark:bg-orange-950 rounded-lg border">
                         <p className="text-sm text-muted-foreground">Taxable Income</p>
@@ -1073,6 +1072,24 @@ const IncomeTaxReturn = () => {
                           <div className="flex justify-between p-2 bg-muted rounded">
                             <span>₹7,00,001 to ₹10,00,000 (10%)</span>
                             <span>₹{Math.min((calculateTaxableIncome() - 700000) * 0.10, 300000 * 0.10).toLocaleString('en-IN')}</span>
+                          </div>
+                        )}
+                        {calculateTaxableIncome() > 1000000 && (
+                          <div className="flex justify-between p-2 bg-muted rounded">
+                            <span>₹10,00,001 to ₹12,00,000 (15%)</span>
+                            <span>₹{Math.min((calculateTaxableIncome() - 1000000) * 0.15, 200000 * 0.15).toLocaleString('en-IN')}</span>
+                          </div>
+                        )}
+                        {calculateTaxableIncome() > 1200000 && (
+                          <div className="flex justify-between p-2 bg-muted rounded">
+                            <span>₹12,00,001 to ₹15,00,000 (20%)</span>
+                            <span>₹{Math.min((calculateTaxableIncome() - 1200000) * 0.20, 300000 * 0.20).toLocaleString('en-IN')}</span>
+                          </div>
+                        )}
+                        {calculateTaxableIncome() > 1500000 && (
+                          <div className="flex justify-between p-2 bg-muted rounded">
+                            <span>₹15,00,001 and above (30%)</span>
+                            <span>₹{((calculateTaxableIncome() - 1500000) * 0.30).toLocaleString('en-IN')}</span>
                           </div>
                         )}
                         <div className="flex justify-between p-2 bg-muted rounded">
