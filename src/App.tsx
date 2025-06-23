@@ -29,6 +29,7 @@ import DocumentReader from "./pages/DocumentReader";
 import Dictionary from "./pages/Dictionary";
 import IncomeTaxReturn from "./pages/IncomeTaxReturn";
 import PersonalTrainer from "./pages/PersonalTrainer";
+import PhysiotherapyTools from "./pages/PhysiotherapyTools";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/document-reader" element={<DocumentReader />} />
               <Route path="/dictionary" element={<Dictionary />} />
               <Route path="/personal-trainer" element={<PersonalTrainer />} />
+              <Route path="/physiotherapy-tools" element={<PhysiotherapyTools />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
