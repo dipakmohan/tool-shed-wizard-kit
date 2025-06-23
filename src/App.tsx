@@ -28,6 +28,7 @@ import TypingSpeedTester from "./pages/TypingSpeedTester";
 import DocumentReader from "./pages/DocumentReader";
 import Dictionary from "./pages/Dictionary";
 import IncomeTaxReturn from "./pages/IncomeTaxReturn";
+import PersonalTrainer from "./pages/PersonalTrainer";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/typing-speed-tester" element={<TypingSpeedTester />} />
               <Route path="/document-reader" element={<DocumentReader />} />
               <Route path="/dictionary" element={<Dictionary />} />
+              <Route path="/personal-trainer" element={<PersonalTrainer />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
