@@ -23,6 +23,7 @@ import DatasetGenerator from "./pages/DatasetGenerator";
 import PptToPdf from "./pages/PptToPdf";
 import PdfToPpt from "./pages/PdfToPpt";
 import VoiceToText from "./pages/VoiceToText";
+import TextToSpeech from "./pages/TextToSpeech";
 import GstCalculator from "./pages/GstCalculator";
 import TypingSpeedTester from "./pages/TypingSpeedTester";
 import DocumentReader from "./pages/DocumentReader";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/image-to-text" element={<ImageToText />} />
               <Route path="/voice-to-text" element={<VoiceToText />} />
+              <Route path="/text-to-speech" element={<TextToSpeech />} />
               <Route path="/image-compressor" element={<ImageCompressor />} />
               <Route path="/pdf-tools" element={<PdfTools />} />
               <Route path="/pdf-merger" element={<PdfMerger />} />

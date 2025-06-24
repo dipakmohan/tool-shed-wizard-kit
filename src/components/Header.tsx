@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { FileUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ const Header = () => {
           <Link to="/camera-scanner" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors font-semibold">Camera Scanner</Link>
           <Link to="/image-to-text" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Image to Text</Link>
           <Link to="/voice-to-text" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Voice to Text</Link>
+          <Link to="/text-to-speech" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Text to Speech</Link>
           <Link to="/dictionary" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Dictionary</Link>
           <Link to="/document-reader" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Document Reader</Link>
           <Link to="/personal-trainer" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Personal Trainer</Link>
