@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, Square, Download, Volume2, FileAudio, Copy } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Play, Pause, Square, Download, Volume2, FileAudio, Copy, Key, Sparkles } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const TextToSpeech = () => {
   const [text, setText] = useState('');
@@ -18,6 +19,9 @@ const TextToSpeech = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isConverting, setIsConverting] = useState(false);
+  const [elevenLabsApiKey, setElevenLabsApiKey] = useState('');
+  const [selectedVoice, setSelectedVoice] = useState('pNInz6obpgDQGcFmaJgB'); // Indian English voice
+  const [voiceEngine, setVoiceEngine] = useState<'browser' | 'elevenlabs'>('elevenlabs');
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -27,11 +31,28 @@ const TextToSpeech = () => {
     { code: 'en-US', name: 'English (US)', flag: '🇺🇸' },
     { code: 'en-GB', name: 'English (UK)', flag: '🇬🇧' },
     { code: 'hi-IN', name: 'Hindi', flag: '🇮🇳' },
-    { code: 'en-IN', name: 'Hinglish (English-India)', flag: '🇮🇳' },
+    { code: 'en-IN', name: 'English (India)', flag: '🇮🇳' },
+  ];
+
+  // ElevenLabs voices with Indian accents
+  const elevenLabsVoices = [
+    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam (Indian English Male)', gender: 'male', accent: 'Indian' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah (Indian English Female)', gender: 'female', accent: 'Indian' },
+    { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold (Indian English Male)', gender: 'male', accent: 'Indian' },
+    { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli (Indian English Female)', gender: 'female', accent: 'Indian' },
+    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh (Indian English Male)', gender: 'male', accent: 'Indian' },
+    { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi (Indian English Female)', gender: 'female', accent: 'Indian' },
+    { id: 'CYw3kZ02Hs0563khs1Fj', name: 'Dave (Indian English Male)', gender: 'male', accent: 'Indian' },
+    { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George (Indian English Male)', gender: 'male', accent: 'Indian' },
   ];
 
   const wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length;
   const charCount = text.length;
+
+  // Filter ElevenLabs voices by gender
+  const getFilteredElevenLabsVoices = () => {
+    return elevenLabsVoices.filter(voice => voice.gender === voiceGender);
+  };
 
   const getVoices = () => {
     const voices = speechSynthesis.getVoices();
@@ -52,6 +73,99 @@ const TextToSpeech = () => {
           voice.name.toLowerCase().includes('alex');
       return isCorrectLang && matchesGender;
     });
+  };
+
+  const generateSpeechWithElevenLabs = async () => {
+    if (!elevenLabsApiKey.trim()) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter your ElevenLabs API key to use premium voices.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!text.trim()) {
+      toast({
+        title: "No Text to Convert",
+        description: "Please enter some text to convert to speech.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsConverting(true);
+
+    try {
+      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + selectedVoice, {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': elevenLabsApiKey,
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.5,
+            use_speaker_boost: true
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const audioData = await response.arrayBuffer();
+      const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
+      setAudioBlob(audioBlob);
+
+      // Play the audio
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      audio.onplay = () => {
+        setIsPlaying(true);
+        setIsPaused(false);
+        setIsConverting(false);
+        toast({
+          title: "Conversion Complete",
+          description: "High-quality speech generated with Indian accent!",
+        });
+      };
+
+      audio.onended = () => {
+        setIsPlaying(false);
+        setIsPaused(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onerror = () => {
+        setIsPlaying(false);
+        setIsPaused(false);
+        setIsConverting(false);
+        toast({
+          title: "Playback Error",
+          description: "Error playing the generated audio.",
+          variant: "destructive",
+        });
+      };
+
+      await audio.play();
+
+    } catch (error) {
+      console.error('ElevenLabs API Error:', error);
+      setIsConverting(false);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate speech. Please check your API key and try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const startRecording = async () => {
@@ -91,6 +205,12 @@ const TextToSpeech = () => {
   };
 
   const speak = async () => {
+    if (voiceEngine === 'elevenlabs') {
+      await generateSpeechWithElevenLabs();
+      return;
+    }
+
+    // Browser TTS fallback code
     if (!text.trim()) {
       toast({
         title: "No Text to Convert",
@@ -110,7 +230,6 @@ const TextToSpeech = () => {
     }
 
     if ('speechSynthesis' in window) {
-      // Stop any existing speech
       speechSynthesis.cancel();
       
       setIsConverting(true);
@@ -206,7 +325,8 @@ const TextToSpeech = () => {
     const url = URL.createObjectURL(audioBlob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `text-to-speech-${Date.now()}.wav`;
+    const extension = voiceEngine === 'elevenlabs' ? 'mp3' : 'wav';
+    a.download = `text-to-speech-${Date.now()}.${extension}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -236,36 +356,149 @@ const TextToSpeech = () => {
     <div className="animate-fade-in space-y-6">
       <div className="text-center">
         <h1 className="text-3xl font-bold">Text to Speech Converter</h1>
-        <p className="text-muted-foreground">Convert text to speech in multiple languages with downloadable audio</p>
+        <p className="text-muted-foreground">Convert text to speech with realistic Indian accents for YouTube videos</p>
       </div>
 
+      {/* Voice Engine Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5" />
+            Voice Quality Selection
+          </CardTitle>
+          <CardDescription>Choose between premium AI voices or standard browser voices</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={voiceEngine} onValueChange={(value: 'browser' | 'elevenlabs') => setVoiceEngine(value)}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="elevenlabs" className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Premium AI Voices (Recommended)
+              </TabsTrigger>
+              <TabsTrigger value="browser">Standard Browser Voices</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="elevenlabs" className="mt-4">
+              <div className="space-y-4">
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
+                  <h4 className="font-semibold text-blue-900 mb-2">🎯 Perfect for YouTube Videos!</h4>
+                  <p className="text-sm text-blue-800">
+                    Get realistic Indian English voices with natural intonation, emotion, and perfect pronunciation. 
+                    These voices sound like real people, not robotic text readers.
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-2 block flex items-center gap-2">
+                    <Key className="w-4 h-4" />
+                    ElevenLabs API Key
+                  </label>
+                  <Input
+                    type="password"
+                    value={elevenLabsApiKey}
+                    onChange={(e) => setElevenLabsApiKey(e.target.value)}
+                    placeholder="Enter your ElevenLabs API key..."
+                    className="mb-2"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Get your free API key from{' '}
+                    <a href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                      elevenlabs.io
+                    </a>
+                    . Free tier includes 10,000 characters per month.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Select Indian Voice</label>
+                  <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getFilteredElevenLabsVoices().map((voice) => (
+                        <SelectItem key={voice.id} value={voice.id}>
+                          <span className="flex items-center gap-2">
+                            <span>🇮🇳</span>
+                            <span>{voice.name}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="browser" className="mt-4">
+              <div className="space-y-4">
+                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Browser voices have limited Indian accent support and may sound robotic. 
+                    For YouTube videos, we recommend using Premium AI Voices above.
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Language</label>
+                  <Select value={language} onValueChange={setLanguage}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          <span className="flex items-center gap-2">
+                            <span>{lang.flag}</span>
+                            <span>{lang.name}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Speed: {speed[0].toFixed(1)}x
+                  </label>
+                  <Slider
+                    value={speed}
+                    onValueChange={setSpeed}
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Pitch: {pitch[0].toFixed(1)}
+                  </label>
+                  <Slider
+                    value={pitch}
+                    onValueChange={setPitch}
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Settings */}
+        {/* Voice Gender Selection */}
         <Card>
           <CardHeader>
             <CardTitle>Voice Settings</CardTitle>
-            <CardDescription>Configure language, voice, and speech parameters</CardDescription>
+            <CardDescription>Choose voice gender and characteristics</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Language</label>
-              <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {languages.map((lang) => (
-                    <SelectItem key={lang.code} value={lang.code}>
-                      <span className="flex items-center gap-2">
-                        <span>{lang.flag}</span>
-                        <span>{lang.name}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div>
               <label className="text-sm font-medium mb-2 block">Voice Gender</label>
               <Select value={voiceGender} onValueChange={setVoiceGender}>
@@ -278,34 +511,6 @@ const TextToSpeech = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Speed: {speed[0].toFixed(1)}x
-              </label>
-              <Slider
-                value={speed}
-                onValueChange={setSpeed}
-                min={0.5}
-                max={2}
-                step={0.1}
-                className="w-full"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Pitch: {pitch[0].toFixed(1)}
-              </label>
-              <Slider
-                value={pitch}
-                onValueChange={setPitch}
-                min={0.5}
-                max={2}
-                step={0.1}
-                className="w-full"
-              />
-            </div>
           </CardContent>
         </Card>
 
@@ -313,32 +518,36 @@ const TextToSpeech = () => {
         <Card>
           <CardHeader>
             <CardTitle>Playback Controls</CardTitle>
-            <CardDescription>Control speech playback and download audio</CardDescription>
+            <CardDescription>Generate and download your audio</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2 justify-center flex-wrap">
               {!isPlaying ? (
-                <Button onClick={speak} disabled={isConverting} size="lg">
+                <Button onClick={speak} disabled={isConverting} size="lg" className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
                   <Play className="w-5 h-5 mr-2" />
-                  {isConverting ? 'Converting...' : 'Start'}
+                  {isConverting ? 'Generating...' : (voiceEngine === 'elevenlabs' ? 'Generate AI Voice' : 'Start')}
                 </Button>
               ) : (
                 <>
-                  {!isPaused ? (
-                    <Button onClick={pauseSpeech} size="lg">
-                      <Pause className="w-5 h-5 mr-2" />
-                      Pause
-                    </Button>
-                  ) : (
-                    <Button onClick={resumeSpeech} size="lg">
-                      <Play className="w-5 h-5 mr-2" />
-                      Resume
-                    </Button>
+                  {voiceEngine === 'browser' && (
+                    <>
+                      {!isPaused ? (
+                        <Button onClick={pauseSpeech} size="lg">
+                          <Pause className="w-5 h-5 mr-2" />
+                          Pause
+                        </Button>
+                      ) : (
+                        <Button onClick={resumeSpeech} size="lg">
+                          <Play className="w-5 h-5 mr-2" />
+                          Resume
+                        </Button>
+                      )}
+                      <Button onClick={stopSpeech} variant="outline" size="lg">
+                        <Square className="w-5 h-5 mr-2" />
+                        Stop
+                      </Button>
+                    </>
                   )}
-                  <Button onClick={stopSpeech} variant="outline" size="lg">
-                    <Square className="w-5 h-5 mr-2" />
-                    Stop
-                  </Button>
                 </>
               )}
             </div>
@@ -348,9 +557,10 @@ const TextToSpeech = () => {
                 onClick={downloadAudio} 
                 disabled={!audioBlob}
                 variant="outline"
+                className="border-green-500 text-green-600 hover:bg-green-50"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Download WAV
+                Download {voiceEngine === 'elevenlabs' ? 'MP3' : 'WAV'}
               </Button>
               <Button onClick={copyText} variant="outline">
                 <Copy className="w-4 h-4 mr-2" />
@@ -364,8 +574,13 @@ const TextToSpeech = () => {
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <FileAudio className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                {audioBlob ? 'Audio ready for download' : 'Convert text to generate audio'}
+                {audioBlob ? 'Audio ready for download' : 'Generate speech to create audio file'}
               </p>
+              {voiceEngine === 'elevenlabs' && (
+                <p className="text-xs text-blue-600 mt-1">
+                  High-quality MP3 with realistic Indian accent
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -383,7 +598,7 @@ const TextToSpeech = () => {
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Enter your text here... You can write in English, Hindi, or mix both languages (Hinglish)."
+            placeholder="Enter your text here... Write naturally as you would speak for your YouTube video. The AI will make it sound conversational and engaging."
             className="min-h-[200px] text-base"
             maxLength={50000}
           />
@@ -398,40 +613,51 @@ const TextToSpeech = () => {
       {/* Sample Texts */}
       <Card>
         <CardHeader>
-          <CardTitle>Sample Texts</CardTitle>
-          <CardDescription>Try these sample texts in different languages</CardDescription>
+          <CardTitle>Sample Texts for YouTube</CardTitle>
+          <CardDescription>Try these sample texts optimized for video content</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Button
               variant="outline"
-              onClick={() => setText("Hello! This is a sample English text for text-to-speech conversion. You can use this tool to convert any text into natural-sounding speech with different voices and languages.")}
+              onClick={() => setText("Hello everyone! Welcome back to my channel. Today I'm going to share something really exciting with you. This new text-to-speech tool is perfect for creating professional voiceovers for your YouTube videos. The Indian accent sounds so natural and realistic that your viewers will think it's your actual voice!")}
               className="text-left h-auto p-3"
             >
               <div>
-                <div className="font-medium">🇺🇸 English Sample</div>
+                <div className="font-medium">🎥 YouTube Intro Sample</div>
                 <div className="text-xs text-muted-foreground">Click to use</div>
               </div>
             </Button>
             
             <Button
               variant="outline"
-              onClick={() => setText("नमस्ते! यह हिंदी भाषा में टेक्स्ट टू स्पीच का एक नमूना है। आप इस उपकरण का उपयोग करके किसी भी हिंदी पाठ को प्राकृतिक आवाज़ में बदल सकते हैं।")}
+              onClick={() => setText("नमस्कार दोस्तों! आज मैं आपके साथ एक बहुत ही उपयोगी टिप शेयर करने जा रहा हूं। यह text-to-speech tool बिल्कुल realistic आवाज़ देता है और आपके YouTube videos के लिए perfect है। आप इसका इस्तेमाल करके professional voiceovers बना सकते हैं।")}
               className="text-left h-auto p-3"
             >
               <div>
-                <div className="font-medium">🇮🇳 Hindi Sample</div>
+                <div className="font-medium">🇮🇳 Hindi YouTube Sample</div>
                 <div className="text-xs text-muted-foreground">Click to use</div>
               </div>
             </Button>
             
             <Button
               variant="outline"
-              onClick={() => setText("Hello friends! Aaj हम सीखेंगे text-to-speech का use करना। यह tool बहुत useful है for students और professionals. आप English और Hindi दोनों में बात कर सकते हैं।")}
+              onClick={() => setText("Hey guys! So आज का topic है बहुत interesting. I'm going to show you कैसे आप अपने YouTube videos के लिए realistic voice generate कर सकते हैं. This tool का quality इतना अच्छा है कि आपके viewers को लगेगा कि आप खुद बोल रहे हैं!")}
               className="text-left h-auto p-3"
             >
               <div>
-                <div className="font-medium">🇮🇳 Hinglish Sample</div>
+                <div className="font-medium">🎯 Hinglish YouTube Sample</div>
+                <div className="text-xs text-muted-foreground">Click to use</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => setText("Before we dive into today's content, make sure to hit that subscribe button and ring the notification bell. It really helps the channel grow. Now, let's talk about this amazing technology that's changing how we create content. The voice quality is so impressive that even I was surprised when I first heard it!")}
+              className="text-left h-auto p-3"
+            >
+              <div>
+                <div className="font-medium">📢 Engagement Sample</div>
                 <div className="text-xs text-muted-foreground">Click to use</div>
               </div>
             </Button>
