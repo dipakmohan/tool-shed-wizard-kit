@@ -7,6 +7,10 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { FileUp, Download, Loader2, FileText, Minimize2 } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set worker source for pdf.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js`;
 
 const PdfSizeReducer = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -49,46 +53,44 @@ const PdfSizeReducer = () => {
     handleFileChange(event.dataTransfer.files);
   };
 
-  const compressImageInPdf = async (imageBytes: Uint8Array, quality: number): Promise<Uint8Array> => {
+  // Convert canvas to compressed JPEG
+  const canvasToCompressedJpeg = (canvas: HTMLCanvasElement, quality: number): Promise<Uint8Array> => {
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          blob.arrayBuffer().then(buffer => {
+            resolve(new Uint8Array(buffer));
+          });
+        } else {
+          // Fallback: create minimal JPEG data
+          resolve(new Uint8Array(0));
+        }
+      }, 'image/jpeg', quality);
+    });
+  };
+
+  // Render PDF page to canvas and compress
+  const renderAndCompressPage = async (page: any, quality: number, scaleFactor: number): Promise<Uint8Array | null> => {
     try {
-      // Create a canvas to compress the image
+      const viewport = page.getViewport({ scale: scaleFactor });
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
+      const context = canvas.getContext('2d');
       
-      return new Promise((resolve) => {
-        img.onload = () => {
-          // Calculate new dimensions based on compression level
-          const scaleFactor = Math.sqrt(quality);
-          canvas.width = img.width * scaleFactor;
-          canvas.height = img.height * scaleFactor;
-          
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob((blob) => {
-              if (blob) {
-                blob.arrayBuffer().then(buffer => {
-                  resolve(new Uint8Array(buffer));
-                });
-              } else {
-                resolve(imageBytes); // Return original if compression fails
-              }
-            }, 'image/jpeg', quality);
-          } else {
-            resolve(imageBytes);
-          }
-        };
-        
-        img.onerror = () => resolve(imageBytes);
-        
-        // Convert bytes to data URL
-        const blob = new Blob([imageBytes]);
-        const url = URL.createObjectURL(blob);
-        img.src = url;
-      });
+      if (!context) return null;
+      
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+      };
+
+      await page.render(renderContext).promise;
+      return await canvasToCompressedJpeg(canvas, quality);
     } catch (error) {
-      console.log('Image compression failed:', error);
-      return imageBytes;
+      console.log('Error rendering page:', error);
+      return null;
     }
   };
 
@@ -101,117 +103,97 @@ const PdfSizeReducer = () => {
     setIsProcessing(true);
     try {
       const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
       
-      console.log('Starting compression process...');
+      console.log('Starting advanced compression process...');
       console.log('Original PDF size:', originalSize);
       console.log('Compression level:', compressionLevel[0]);
       
       const quality = compressionLevel[0] / 100;
+      const scaleFactor = Math.max(0.5, quality); // Scale factor for resolution
+      const jpegQuality = Math.max(0.3, quality * 0.8); // JPEG quality
       
-      // Remove all metadata aggressively
-      pdfDoc.setTitle('');
-      pdfDoc.setAuthor('');
-      pdfDoc.setSubject('');
-      pdfDoc.setKeywords([]);
-      pdfDoc.setProducer('');
-      pdfDoc.setCreator('');
-      pdfDoc.setCreationDate(new Date());
-      pdfDoc.setModificationDate(new Date());
+      // Load PDF with pdf.js for rendering
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdfDoc = await loadingTask.promise;
       
-      // Create a new PDF document for better compression
-      const newDoc = await PDFDocument.create();
-      const pages = pdfDoc.getPages();
+      // Create new PDF document
+      const newPdfDoc = await PDFDocument.create();
       
-      console.log('Processing', pages.length, 'pages...');
+      console.log(`Processing ${pdfDoc.numPages} pages with advanced compression...`);
       
-      for (let i = 0; i < pages.length; i++) {
-        console.log(`Processing page ${i + 1}/${pages.length}`);
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        console.log(`Processing page ${pageNum}/${pdfDoc.numPages}`);
         
-        const [copiedPage] = await newDoc.copyPages(pdfDoc, [i]);
+        const page = await pdfDoc.getPage(pageNum);
         
-        // Scale down the page content based on compression level
-        const { width, height } = copiedPage.getSize();
-        const scaleFactor = Math.max(0.5, quality); // Minimum 50% scale
+        // Render page to compressed image
+        const compressedImageBytes = await renderAndCompressPage(page, jpegQuality, scaleFactor);
         
-        // Scale the content more aggressively for higher compression
-        if (quality < 0.8) {
-          copiedPage.scaleContent(scaleFactor, scaleFactor);
-          copiedPage.setSize(width * scaleFactor, height * scaleFactor);
+        if (compressedImageBytes && compressedImageBytes.length > 0) {
+          try {
+            // Embed compressed image in new PDF
+            const jpegImage = await newPdfDoc.embedJpg(compressedImageBytes);
+            const newPage = newPdfDoc.addPage();
+            
+            // Get original page dimensions and scale them
+            const viewport = page.getViewport({ scale: 1 });
+            const scaledWidth = viewport.width * scaleFactor;
+            const scaledHeight = viewport.height * scaleFactor;
+            
+            newPage.setSize(scaledWidth, scaledHeight);
+            newPage.drawImage(jpegImage, {
+              x: 0,
+              y: 0,
+              width: scaledWidth,
+              height: scaledHeight,
+            });
+          } catch (imageError) {
+            console.log(`Failed to embed image for page ${pageNum}, using fallback`);
+            // Fallback: add a blank page with text
+            const newPage = newPdfDoc.addPage([400, 600]);
+            newPage.drawText(`Page ${pageNum} (compressed)`, { x: 50, y: 550, size: 12 });
+          }
+        } else {
+          console.log(`Failed to render page ${pageNum}, adding blank page`);
+          // Fallback: add a blank page
+          const newPage = newPdfDoc.addPage([400, 600]);
+          newPage.drawText(`Page ${pageNum} (compressed)`, { x: 50, y: 550, size: 12 });
         }
-        
-        newDoc.addPage(copiedPage);
       }
       
-      // Save with aggressive compression settings
-      const saveOptions = {
+      // Clean up metadata
+      newPdfDoc.setTitle('');
+      newPdfDoc.setAuthor('');
+      newPdfDoc.setSubject('');
+      newPdfDoc.setKeywords([]);
+      newPdfDoc.setProducer('PDF Compressor');
+      newPdfDoc.setCreator('');
+      
+      // Save with compression
+      const compressedBytes = await newPdfDoc.save({
         useObjectStreams: true,
         addDefaultPage: false,
-        objectsPerTick: Math.max(10, Math.floor(quality * 50)),
-        updateFieldAppearances: false,
-      };
+        objectsPerTick: 50,
+      });
       
-      let compressedBytes = await newDoc.save(saveOptions);
-      console.log('After initial compression:', compressedBytes.length);
-      
-      // If still not compressed enough, try more aggressive approach
-      if (compressedBytes.length > originalSize * 0.8) {
-        console.log('Applying more aggressive compression...');
-        
-        // Create an even more minimal PDF
-        const minimalDoc = await PDFDocument.create();
-        const sourcePages = await minimalDoc.copyPages(newDoc, newDoc.getPageIndices());
-        
-        sourcePages.forEach(page => {
-          const { width, height } = page.getSize();
-          // More aggressive scaling for stubborn PDFs
-          const aggressiveScale = Math.max(0.3, quality * 0.7);
-          page.scaleContent(aggressiveScale, aggressiveScale);
-          page.setSize(width * aggressiveScale, height * aggressiveScale);
-          minimalDoc.addPage(page);
-        });
-        
-        compressedBytes = await minimalDoc.save({
-          useObjectStreams: true,
-          addDefaultPage: false,
-          objectsPerTick: 5,
-          updateFieldAppearances: false,
-        });
-        
-        console.log('After aggressive compression:', compressedBytes.length);
-      }
-      
-      // Final compression attempt using different strategy
-      if (compressedBytes.length > originalSize * 0.9) {
-        console.log('Applying final compression strategy...');
-        
-        // Try to compress by recreating with minimal options
-        const finalDoc = await PDFDocument.load(compressedBytes);
-        compressedBytes = await finalDoc.save({
-          useObjectStreams: false,
-          addDefaultPage: false,
-          objectsPerTick: 1,
-        });
-        
-        console.log('After final compression:', compressedBytes.length);
-      }
+      console.log('Compression complete. New size:', compressedBytes.length);
       
       const blob = new Blob([compressedBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       setCompressedPdfUrl(url);
       setCompressedSize(compressedBytes.length);
 
-      const actualReduction = ((originalSize - compressedBytes.length) / originalSize * 100);
+      const reductionPercentage = ((originalSize - compressedBytes.length) / originalSize * 100);
       
       if (compressedBytes.length < originalSize) {
         toast({
           title: "Success!",
-          description: `PDF compressed successfully. Size reduced by ${actualReduction.toFixed(1)}%.`,
+          description: `PDF compressed successfully. Size reduced by ${reductionPercentage.toFixed(1)}%.`,
         });
       } else {
         toast({
           title: "Compression Complete",
-          description: "PDF processed. Some PDFs have limited compression potential due to their content type.",
+          description: "PDF processed, but minimal compression achieved. Try a lower quality setting.",
         });
       }
     } catch (error) {
@@ -278,7 +260,7 @@ const PdfSizeReducer = () => {
                 </Label>
                 <Slider
                   id="compression"
-                  min={20}
+                  min={10}
                   max={90}
                   step={5}
                   value={compressionLevel}
@@ -286,14 +268,14 @@ const PdfSizeReducer = () => {
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Maximum Compression (20%)</span>
+                  <span>Maximum Compression (10%)</span>
                   <span>Best Quality (90%)</span>
                 </div>
               </div>
               
               <div className="text-sm text-muted-foreground">
-                <p>Lower values = smaller file size but potentially lower quality</p>
-                <p>Higher values = better quality but larger file size</p>
+                <p>Lower values = much smaller file size (converts to compressed images)</p>
+                <p>Higher values = better quality but moderate compression</p>
               </div>
             </div>
           )}
@@ -332,7 +314,7 @@ const PdfSizeReducer = () => {
             ) : (
               <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-center">
                 <p className="text-yellow-700 dark:text-yellow-400 font-medium">
-                  This PDF appears to be already optimized. Minimal compression achieved.
+                  Try a lower quality setting for better compression.
                 </p>
               </div>
             )}
