@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { FileUp, Download, Loader2, FileText, Minimize2 } from 'lucide-react';
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument } from 'pdf-lib';
 
 const PdfSizeReducer = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -49,6 +49,49 @@ const PdfSizeReducer = () => {
     handleFileChange(event.dataTransfer.files);
   };
 
+  const compressImageInPdf = async (imageBytes: Uint8Array, quality: number): Promise<Uint8Array> => {
+    try {
+      // Create a canvas to compress the image
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      return new Promise((resolve) => {
+        img.onload = () => {
+          // Calculate new dimensions based on compression level
+          const scaleFactor = Math.sqrt(quality);
+          canvas.width = img.width * scaleFactor;
+          canvas.height = img.height * scaleFactor;
+          
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => {
+              if (blob) {
+                blob.arrayBuffer().then(buffer => {
+                  resolve(new Uint8Array(buffer));
+                });
+              } else {
+                resolve(imageBytes); // Return original if compression fails
+              }
+            }, 'image/jpeg', quality);
+          } else {
+            resolve(imageBytes);
+          }
+        };
+        
+        img.onerror = () => resolve(imageBytes);
+        
+        // Convert bytes to data URL
+        const blob = new Blob([imageBytes]);
+        const url = URL.createObjectURL(blob);
+        img.src = url;
+      });
+    } catch (error) {
+      console.log('Image compression failed:', error);
+      return imageBytes;
+    }
+  };
+
   const handleCompress = useCallback(async () => {
     if (!pdfFile) {
       toast({ title: "No PDF Selected", description: "Please upload a PDF file first.", variant: "destructive" });
@@ -60,92 +103,107 @@ const PdfSizeReducer = () => {
       const arrayBuffer = await pdfFile.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       
+      console.log('Starting compression process...');
       console.log('Original PDF size:', originalSize);
       console.log('Compression level:', compressionLevel[0]);
       
-      // Remove metadata to reduce size
+      const quality = compressionLevel[0] / 100;
+      
+      // Remove all metadata aggressively
       pdfDoc.setTitle('');
       pdfDoc.setAuthor('');
       pdfDoc.setSubject('');
       pdfDoc.setKeywords([]);
       pdfDoc.setProducer('');
       pdfDoc.setCreator('');
+      pdfDoc.setCreationDate(new Date());
+      pdfDoc.setModificationDate(new Date());
       
-      // Get compression quality based on slider (invert so lower slider = more compression)
-      const quality = compressionLevel[0] / 100;
+      // Create a new PDF document for better compression
+      const newDoc = await PDFDocument.create();
+      const pages = pdfDoc.getPages();
       
-      // More aggressive compression settings
-      const pdfBytes = await pdfDoc.save({
+      console.log('Processing', pages.length, 'pages...');
+      
+      for (let i = 0; i < pages.length; i++) {
+        console.log(`Processing page ${i + 1}/${pages.length}`);
+        
+        const [copiedPage] = await newDoc.copyPages(pdfDoc, [i]);
+        
+        // Scale down the page content based on compression level
+        const { width, height } = copiedPage.getSize();
+        const scaleFactor = Math.max(0.5, quality); // Minimum 50% scale
+        
+        // Scale the content more aggressively for higher compression
+        if (quality < 0.8) {
+          copiedPage.scaleContent(scaleFactor, scaleFactor);
+          copiedPage.setSize(width * scaleFactor, height * scaleFactor);
+        }
+        
+        newDoc.addPage(copiedPage);
+      }
+      
+      // Save with aggressive compression settings
+      const saveOptions = {
         useObjectStreams: true,
         addDefaultPage: false,
-        objectsPerTick: 50,
-        updateFieldAppearances: false
-      });
+        objectsPerTick: Math.max(10, Math.floor(quality * 50)),
+        updateFieldAppearances: false,
+      };
       
-      console.log('After pdf-lib compression:', pdfBytes.length);
+      let compressedBytes = await newDoc.save(saveOptions);
+      console.log('After initial compression:', compressedBytes.length);
       
-      // Additional compression by creating a new PDF with reduced quality
-      let finalBytes = pdfBytes;
-      
-      // If we want more aggressive compression, recreate the PDF
-      if (quality < 0.8) {
-        try {
-          const compressedDoc = await PDFDocument.create();
-          const pages = await compressedDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
-          
-          pages.forEach((page) => {
-            // Scale down pages slightly for more compression
-            const { width, height } = page.getSize();
-            const scaleFactor = Math.max(0.7, quality);
-            page.scaleContent(scaleFactor, scaleFactor);
-            page.setSize(width * scaleFactor, height * scaleFactor);
-            compressedDoc.addPage(page);
-          });
-          
-          finalBytes = await compressedDoc.save({
-            useObjectStreams: true,
-            addDefaultPage: false,
-            objectsPerTick: Math.floor(quality * 100),
-            updateFieldAppearances: false
-          });
-          
-          console.log('After aggressive compression:', finalBytes.length);
-        } catch (error) {
-          console.log('Aggressive compression failed, using basic compression');
-        }
+      // If still not compressed enough, try more aggressive approach
+      if (compressedBytes.length > originalSize * 0.8) {
+        console.log('Applying more aggressive compression...');
+        
+        // Create an even more minimal PDF
+        const minimalDoc = await PDFDocument.create();
+        const sourcePages = await minimalDoc.copyPages(newDoc, newDoc.getPageIndices());
+        
+        sourcePages.forEach(page => {
+          const { width, height } = page.getSize();
+          // More aggressive scaling for stubborn PDFs
+          const aggressiveScale = Math.max(0.3, quality * 0.7);
+          page.scaleContent(aggressiveScale, aggressiveScale);
+          page.setSize(width * aggressiveScale, height * aggressiveScale);
+          minimalDoc.addPage(page);
+        });
+        
+        compressedBytes = await minimalDoc.save({
+          useObjectStreams: true,
+          addDefaultPage: false,
+          objectsPerTick: 5,
+          updateFieldAppearances: false,
+        });
+        
+        console.log('After aggressive compression:', compressedBytes.length);
       }
       
-      // If still not compressed enough, try data compression
-      if (finalBytes.length > originalSize * (quality + 0.1)) {
-        // Create a smaller version by removing some optional elements
-        try {
-          const minimalDoc = await PDFDocument.create();
-          const sourcePages = await minimalDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
-          
-          sourcePages.forEach(page => {
-            minimalDoc.addPage(page);
-          });
-          
-          finalBytes = await minimalDoc.save({
-            useObjectStreams: true,
-            addDefaultPage: false,
-            objectsPerTick: 20
-          });
-          
-          console.log('After minimal compression:', finalBytes.length);
-        } catch (error) {
-          console.log('Minimal compression failed');
-        }
+      // Final compression attempt using different strategy
+      if (compressedBytes.length > originalSize * 0.9) {
+        console.log('Applying final compression strategy...');
+        
+        // Try to compress by recreating with minimal options
+        const finalDoc = await PDFDocument.load(compressedBytes);
+        compressedBytes = await finalDoc.save({
+          useObjectStreams: false,
+          addDefaultPage: false,
+          objectsPerTick: 1,
+        });
+        
+        console.log('After final compression:', compressedBytes.length);
       }
       
-      const blob = new Blob([finalBytes], { type: 'application/pdf' });
+      const blob = new Blob([compressedBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       setCompressedPdfUrl(url);
-      setCompressedSize(finalBytes.length);
+      setCompressedSize(compressedBytes.length);
 
-      const actualReduction = ((originalSize - finalBytes.length) / originalSize * 100);
+      const actualReduction = ((originalSize - compressedBytes.length) / originalSize * 100);
       
-      if (finalBytes.length < originalSize) {
+      if (compressedBytes.length < originalSize) {
         toast({
           title: "Success!",
           description: `PDF compressed successfully. Size reduced by ${actualReduction.toFixed(1)}%.`,
@@ -153,7 +211,7 @@ const PdfSizeReducer = () => {
       } else {
         toast({
           title: "Compression Complete",
-          description: "PDF processed, but size reduction was minimal. This PDF may already be optimized.",
+          description: "PDF processed. Some PDFs have limited compression potential due to their content type.",
         });
       }
     } catch (error) {
@@ -220,16 +278,16 @@ const PdfSizeReducer = () => {
                 </Label>
                 <Slider
                   id="compression"
-                  min={30}
-                  max={95}
+                  min={20}
+                  max={90}
                   step={5}
                   value={compressionLevel}
                   onValueChange={setCompressionLevel}
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Maximum Compression (30%)</span>
-                  <span>Best Quality (95%)</span>
+                  <span>Maximum Compression (20%)</span>
+                  <span>Best Quality (90%)</span>
                 </div>
               </div>
               
