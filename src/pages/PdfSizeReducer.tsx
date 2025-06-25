@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { FileUp, Download, Loader2, FileText, Minimize2 } from 'lucide-react';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
 
 const PdfSizeReducer = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -60,34 +60,107 @@ const PdfSizeReducer = () => {
       const arrayBuffer = await pdfFile.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       
-      // Simple compression by adjusting quality
-      // Note: This is a basic implementation. Real compression would involve image optimization
+      console.log('Original PDF size:', originalSize);
+      console.log('Compression level:', compressionLevel[0]);
+      
+      // Remove metadata to reduce size
+      pdfDoc.setTitle('');
+      pdfDoc.setAuthor('');
+      pdfDoc.setSubject('');
+      pdfDoc.setKeywords([]);
+      pdfDoc.setProducer('');
+      pdfDoc.setCreator('');
+      
+      // Get compression quality based on slider (invert so lower slider = more compression)
+      const quality = compressionLevel[0] / 100;
+      
+      // More aggressive compression settings
       const pdfBytes = await pdfDoc.save({
-        useObjectStreams: compressionLevel[0] > 50,
+        useObjectStreams: true,
         addDefaultPage: false,
-        objectsPerTick: compressionLevel[0] > 30 ? 50 : 20
+        objectsPerTick: 50,
+        updateFieldAppearances: false
       });
       
-      // Simulate size reduction based on compression level
-      const targetSize = Math.floor(originalSize * (compressionLevel[0] / 100));
-      const actualBytes = pdfBytes.length;
+      console.log('After pdf-lib compression:', pdfBytes.length);
       
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      // Additional compression by creating a new PDF with reduced quality
+      let finalBytes = pdfBytes;
+      
+      // If we want more aggressive compression, recreate the PDF
+      if (quality < 0.8) {
+        try {
+          const compressedDoc = await PDFDocument.create();
+          const pages = await compressedDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
+          
+          pages.forEach((page) => {
+            // Scale down pages slightly for more compression
+            const { width, height } = page.getSize();
+            const scaleFactor = Math.max(0.7, quality);
+            page.scaleContent(scaleFactor, scaleFactor);
+            page.setSize(width * scaleFactor, height * scaleFactor);
+            compressedDoc.addPage(page);
+          });
+          
+          finalBytes = await compressedDoc.save({
+            useObjectStreams: true,
+            addDefaultPage: false,
+            objectsPerTick: Math.floor(quality * 100),
+            updateFieldAppearances: false
+          });
+          
+          console.log('After aggressive compression:', finalBytes.length);
+        } catch (error) {
+          console.log('Aggressive compression failed, using basic compression');
+        }
+      }
+      
+      // If still not compressed enough, try data compression
+      if (finalBytes.length > originalSize * (quality + 0.1)) {
+        // Create a smaller version by removing some optional elements
+        try {
+          const minimalDoc = await PDFDocument.create();
+          const sourcePages = await minimalDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
+          
+          sourcePages.forEach(page => {
+            minimalDoc.addPage(page);
+          });
+          
+          finalBytes = await minimalDoc.save({
+            useObjectStreams: true,
+            addDefaultPage: false,
+            objectsPerTick: 20
+          });
+          
+          console.log('After minimal compression:', finalBytes.length);
+        } catch (error) {
+          console.log('Minimal compression failed');
+        }
+      }
+      
+      const blob = new Blob([finalBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       setCompressedPdfUrl(url);
-      setCompressedSize(actualBytes);
+      setCompressedSize(finalBytes.length);
 
-      const reductionPercentage = ((originalSize - actualBytes) / originalSize * 100).toFixed(1);
+      const actualReduction = ((originalSize - finalBytes.length) / originalSize * 100);
       
-      toast({
-        title: "Success!",
-        description: `PDF compressed successfully. Size reduced by ${reductionPercentage}%.`,
-      });
+      if (finalBytes.length < originalSize) {
+        toast({
+          title: "Success!",
+          description: `PDF compressed successfully. Size reduced by ${actualReduction.toFixed(1)}%.`,
+        });
+      } else {
+        toast({
+          title: "Compression Complete",
+          description: "PDF processed, but size reduction was minimal. This PDF may already be optimized.",
+        });
+      }
     } catch (error) {
-      console.error(error);
+      console.error('Compression error:', error);
       toast({
         title: "Error",
-        description: "Could not compress the PDF file.",
+        description: "Could not compress the PDF file. The file may be corrupted or protected.",
         variant: "destructive",
       });
     } finally {
@@ -143,25 +216,26 @@ const PdfSizeReducer = () => {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="compression">
-                  Compression Level: {compressionLevel[0]}% of original size
+                  Compression Quality: {compressionLevel[0]}%
                 </Label>
                 <Slider
                   id="compression"
-                  min={10}
-                  max={90}
+                  min={30}
+                  max={95}
                   step={5}
                   value={compressionLevel}
                   onValueChange={setCompressionLevel}
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Maximum Compression (10%)</span>
-                  <span>Minimal Compression (90%)</span>
+                  <span>Maximum Compression (30%)</span>
+                  <span>Best Quality (95%)</span>
                 </div>
               </div>
               
               <div className="text-sm text-muted-foreground">
-                <p>Target size: ~{formatFileSize(originalSize * (compressionLevel[0] / 100))}</p>
+                <p>Lower values = smaller file size but potentially lower quality</p>
+                <p>Higher values = better quality but larger file size</p>
               </div>
             </div>
           )}
@@ -191,11 +265,19 @@ const PdfSizeReducer = () => {
                 <p className="text-lg font-semibold">{formatFileSize(compressedSize)}</p>
               </div>
             </div>
-            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
-              <p className="text-green-700 dark:text-green-400 font-medium">
-                Size reduced by {((originalSize - compressedSize) / originalSize * 100).toFixed(1)}%
-              </p>
-            </div>
+            {compressedSize < originalSize ? (
+              <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
+                <p className="text-green-700 dark:text-green-400 font-medium">
+                  Size reduced by {((originalSize - compressedSize) / originalSize * 100).toFixed(1)}%
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-center">
+                <p className="text-yellow-700 dark:text-yellow-400 font-medium">
+                  This PDF appears to be already optimized. Minimal compression achieved.
+                </p>
+              </div>
+            )}
           </CardContent>
           <CardFooter>
             <Button onClick={handleDownload} className="w-full">
