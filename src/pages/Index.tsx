@@ -1,5 +1,6 @@
+
 import ToolCard from "@/components/ToolCard";
-import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan, FileSpreadsheet, Database, Presentation, Mic, Keyboard, BookOpen, Languages, FileCheck, Stethoscope, Volume2 } from "lucide-react";
+import { FileText, Image, File, Calculator, Currency, FilePlus, PiggyBank, Receipt, Scan, FileSpreadsheet, Database, Presentation, Mic, Keyboard, BookOpen, Languages, FileCheck, Stethoscope, Volume2, Minimize2 } from "lucide-react";
 
 const tools = [
   {
@@ -78,6 +79,13 @@ const tools = [
     description: "Combine multiple PDF files into a single document.",
     href: "/pdf-merger",
     color: "yellow" as const,
+  },
+  {
+    icon: Minimize2,
+    title: "PDF Size Reducer",
+    description: "Compress PDF files to reduce their size with adjustable compression levels.",
+    href: "/pdf-size-reducer",
+    color: "accent" as const,
   },
   {
     icon: FileSpreadsheet,

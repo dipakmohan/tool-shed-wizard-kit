@@ -31,6 +31,7 @@ import Dictionary from "./pages/Dictionary";
 import IncomeTaxReturn from "./pages/IncomeTaxReturn";
 import PersonalTrainer from "./pages/PersonalTrainer";
 import PhysiotherapyTools from "./pages/PhysiotherapyTools";
+import PdfSizeReducer from "./pages/PdfSizeReducer";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/image-compressor" element={<ImageCompressor />} />
               <Route path="/pdf-tools" element={<PdfTools />} />
               <Route path="/pdf-merger" element={<PdfMerger />} />
+              <Route path="/pdf-size-reducer" element={<PdfSizeReducer />} />
               <Route path="/excel-to-pdf" element={<ExcelToPdf />} />
               <Route path="/pdf-to-excel" element={<PdfToExcel />} />
               <Route path="/ppt-to-pdf" element={<PptToPdf />} />
